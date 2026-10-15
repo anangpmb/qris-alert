@@ -1,0 +1,1848 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QRIS Alert · Pratinjau aplikasi Android</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Halaman ---------- */
+  :root {
+    color-scheme: light;
+    --bg: #FAFAF9;
+    --surface: #FFFFFF;
+    --surface-muted: #F4F4F5;
+    --text: #18181B;
+    --muted: #52525B;
+    --border: #E4E4E7;
+    --border-strong: #A1A1AA;
+    --accent: #C8222A;
+    --ok: #1F7A4A;
+    --primary: #18181B;
+    --on-primary: #FFFFFF;
+    --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --s: 1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #0C0C0E;
+      --surface: #161618;
+      --surface-muted: #1F1F22;
+      --text: #F4F4F5;
+      --muted: #A1A1AA;
+      --border: #27272A;
+      --border-strong: #52525B;
+      --accent: #F0656B;
+      --ok: #5BCB8C;
+      --primary: #F4F4F5;
+      --on-primary: #0C0C0E;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 400 16px/1.6 var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input { font: inherit; color: inherit; }
+
+  .page {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 64px;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 32px 32px 64px;
+    align-items: start;
+  }
+  .device-col { position: sticky; top: 32px; }
+  .device-slot { width: calc(384px * var(--s)); height: calc(812px * var(--s)); }
+  .device-cap { margin: 12px 0 0; color: var(--muted); font-size: 13px; text-align: center; }
+
+  .panel { display: grid; gap: 16px; min-width: 0; }
+  .intro { padding: 8px 0 32px; }
+  .kicker { margin: 0 0 12px; color: var(--muted); font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .intro h1 {
+    margin: 0;
+    font-size: clamp(44px, 6vw, 76px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.045em;
+  }
+  .lede { max-width: 50ch; margin: 20px 0 0; color: var(--muted); font-size: 17px; }
+  .steps { display: grid; gap: 10px; margin: 28px 0 0; padding: 0; list-style: none; counter-reset: step; }
+  .steps li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; counter-increment: step; }
+  .steps li::before {
+    content: counter(step);
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border-strong);
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .card { padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+  .card h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+  .card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-bottom: 18px; }
+  .card-head p { margin: 0; color: var(--muted); font-size: 14px; }
+  .card h3 { margin: 24px 0 8px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .hint { margin: 12px 0 0; color: var(--muted); font-size: 14px; }
+  .note { margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--surface-muted); font-size: 14px; }
+  .note[hidden] { display: none; }
+
+  .amount { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+  .amount label { color: var(--muted); font-size: 14px; font-weight: 600; }
+  .amount input {
+    width: 140px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: var(--surface);
+    font-variant-numeric: tabular-nums;
+  }
+  .notifs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .notif-btn {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    min-height: 64px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+  .notif-btn:hover { border-color: var(--border-strong); background: var(--surface-muted); }
+  .notif-btn:active { transform: scale(0.99); }
+  .notif-btn .dot {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    color: #FFF;
+    font: 700 12px/1 Roboto, sans-serif;
+  }
+  .notif-btn b { display: block; font-size: 14px; font-weight: 600; line-height: 1.35; }
+  .notif-btn small { display: block; margin-top: 2px; color: var(--muted); font-size: 13px; line-height: 1.4; }
+
+  .kv { display: grid; gap: 1px; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--border); }
+  .kv div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 14px; background: var(--surface-muted); font-size: 14px; }
+  .kv span { color: var(--muted); }
+  .kv code { font: 13px/1.6 "Roboto Mono", ui-monospace, monospace; overflow-wrap: anywhere; text-align: right; }
+
+  .requests { margin: 0; padding: 0; list-style: none; }
+  .requests li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    padding: 14px 16px;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+  }
+  .requests li + li { margin-top: 8px; }
+  .requests li.empty { display: block; padding: 0; border: 0; color: var(--muted); font-size: 14px; }
+  .req-device { flex: 1 1 160px; font-weight: 600; }
+  .req-device small { display: block; color: var(--muted); font-size: 13px; font-weight: 400; }
+  .req-code { font: 700 28px/1 "Roboto Mono", ui-monospace, monospace; letter-spacing: 0.16em; }
+  .req-actions { display: flex; gap: 8px; }
+
+  .panel .btn {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s, transform 0.1s;
+  }
+  .panel .btn:hover { background: var(--surface-muted); }
+  .panel .btn:active { transform: scale(0.98); }
+  .panel .btn.primary { border-color: var(--primary); background: var(--primary); color: var(--on-primary); }
+  .panel :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .toggles { display: grid; gap: 2px; }
+  .check { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+  .check input { flex: none; width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--primary); cursor: pointer; }
+  .check b { display: block; font-size: 15px; font-weight: 600; }
+  .check small { display: block; color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+  .seg { display: inline-flex; padding: 3px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); }
+  .seg label { position: relative; }
+  .seg input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  .seg span { display: block; padding: 6px 14px; border-radius: 7px; color: var(--muted); font-size: 14px; font-weight: 600; }
+  .seg input:checked + span { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+  .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row-between { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+
+  .ledger { margin: 0; padding: 0; list-style: none; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .ledger li { display: grid; grid-template-columns: 72px 40px 1fr auto; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+  .ledger li:first-child { border-top: 0; }
+  .ledger li.empty { display: block; color: var(--muted); }
+  .ledger .code { color: var(--ok); font-weight: 700; }
+  .ledger .code.bad { color: var(--accent); }
+  .ledger .src { color: var(--muted); }
+
+  @media (max-width: 900px) {
+    .page { grid-template-columns: 1fr; gap: 40px; padding: 24px 20px 48px; }
+    .device-col { position: static; justify-self: center; }
+  }
+  @media (max-width: 520px) {
+    .notifs { grid-template-columns: 1fr; }
+    .card { padding: 20px; }
+  }
+
+  /* ---------- Bodi HP ---------- */
+  .device {
+    position: relative;
+    width: 384px;
+    height: 812px;
+    padding: 12px;
+    border-radius: 54px;
+    background: #121316;
+    box-shadow:
+      inset 0 0 0 1.5px #34373D,
+      0 1px 2px rgba(0, 0, 0, 0.1),
+      0 32px 64px -32px rgba(20, 22, 26, 0.45);
+    transform: scale(var(--s));
+    transform-origin: top left;
+  }
+  .device::before, .device::after {
+    content: "";
+    position: absolute;
+    right: -3px;
+    width: 3px;
+    border-radius: 0 2px 2px 0;
+    background: #2A2D33;
+  }
+  .device::before { top: 150px; height: 64px; }
+  .device::after { top: 240px; height: 110px; }
+
+  .screen {
+    /* Token aplikasi, sama dengan res/values/colors.xml */
+    --a-bg: #F6F6F4;
+    --a-surface: #FFFFFF;
+    --a-surface-muted: #EFEFEC;
+    --a-border: #E1E2DE;
+    --a-field-border: #8D918A;
+    --a-text: #1C1E21;
+    --a-text-muted: #5F646C;
+    --a-primary: #1C1E21;
+    --a-on-primary: #FFFFFF;
+    --a-ok: #1F7A4A;
+    --a-danger: #C8222A;
+    --a-ripple: rgba(0, 0, 0, 0.12);
+    --a-ripple-on-primary: rgba(255, 255, 255, 0.2);
+    --a-thumb-off: #F1F1F1;
+    --a-track-off: rgba(0, 0, 0, 0.38);
+    /* Setelan sistem dan lapisan sistem */
+    --s-bg: #F6F8FC;
+    --s-item: #FFFFFF;
+    --s-item-press: #EAEEF5;
+    --s-text: #1B1C1F;
+    --s-muted: #44474E;
+    --s-accent: #3D5BA9;
+    --s-on-accent: #FFFFFF;
+    --s-outline: #74777F;
+    --s-track-off: #E0E2EC;
+    --s-dialog: #EEF0F7;
+    --o-surface: #F2F3F8;
+    --o-text: #1B1C1F;
+    --o-muted: #44474E;
+    --scrim: rgba(0, 0, 0, 0.32);
+
+    position: relative;
+    width: 360px;
+    height: 788px;
+    overflow: hidden;
+    border-radius: 42px;
+    background: #000;
+    isolation: isolate;
+    color: var(--a-text);
+    font: 400 14px/1.4 Roboto, "Noto Sans", system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .screen[data-theme="dark"] {
+    /* res/values-night/colors.xml */
+    --a-bg: #111214;
+    --a-surface: #1A1C1F;
+    --a-surface-muted: #222428;
+    --a-border: #2E3136;
+    --a-field-border: #6B7078;
+    --a-text: #ECEDE8;
+    --a-text-muted: #A0A5AC;
+    --a-primary: #ECEDE8;
+    --a-on-primary: #111214;
+    --a-ok: #5BCB8C;
+    --a-danger: #F0656B;
+    --a-ripple: rgba(255, 255, 255, 0.16);
+    --a-ripple-on-primary: rgba(0, 0, 0, 0.14);
+    --a-thumb-off: #BDBDBD;
+    --a-track-off: rgba(255, 255, 255, 0.3);
+    --s-bg: #111318;
+    --s-item: #1D2024;
+    --s-item-press: #272A2F;
+    --s-text: #E2E2E9;
+    --s-muted: #C4C6D0;
+    --s-accent: #AAC7FF;
+    --s-on-accent: #0A305F;
+    --s-outline: #8E9099;
+    --s-track-off: #33353A;
+    --s-dialog: #282A2F;
+    --o-surface: #2B2D33;
+    --o-text: #E2E2E9;
+    --o-muted: #C4C6D0;
+    --scrim: rgba(0, 0, 0, 0.5);
+  }
+  .screen button { -webkit-user-select: none; user-select: none; }
+  .screen [hidden] { display: none !important; }
+
+  .statusbar {
+    position: absolute;
+    z-index: 30;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 26px 0 30px;
+    font-size: 13px;
+    font-weight: 500;
+    pointer-events: none;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .statusbar .icons { display: flex; gap: 5px; align-items: center; }
+  .statusbar svg { display: block; fill: currentColor; }
+  .cam {
+    position: absolute;
+    z-index: 31;
+    top: 9px;
+    left: 50%;
+    width: 13px;
+    height: 13px;
+    margin-left: -6.5px;
+    border-radius: 50%;
+    background: #050607;
+    box-shadow: inset 0 0 0 2px #1C1F24;
+    pointer-events: none;
+  }
+  .navbar {
+    position: absolute;
+    z-index: 30;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 40px;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .navbar button {
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 40px;
+    border: 0;
+    border-radius: 20px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .navbar button:active { background: rgba(128, 128, 128, 0.25); }
+  .navbar svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+
+  .screen[data-chrome="app"] .statusbar,
+  .screen[data-chrome="app"] .navbar { background: var(--a-bg); color: var(--a-text); }
+  .screen[data-chrome="settings"] .statusbar,
+  .screen[data-chrome="settings"] .navbar { background: var(--s-bg); color: var(--s-text); }
+  .screen[data-chrome="home"] .statusbar,
+  .screen[data-chrome="home"] .navbar { background: transparent; color: #FFF; }
+
+  /* ---------- Perpindahan layar ---------- */
+  .scr {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 32px 0 48px;
+    visibility: hidden;
+    z-index: 0;
+  }
+  .scr.is-on { visibility: visible; z-index: 2; }
+  .scr.is-under { visibility: visible; z-index: 1; }
+  .scr.is-leaving { visibility: visible; z-index: 3; pointer-events: none; }
+  .scr.in-fwd { animation: inFwd 0.3s cubic-bezier(0.2, 0, 0, 1) both; }
+  .scr.in-open { animation: inOpen 0.3s cubic-bezier(0.2, 0, 0, 1) both; }
+  .scr.out-back { animation: outBack 0.2s cubic-bezier(0.3, 0, 1, 1) both; }
+  .scr.out-home { animation: outHome 0.22s cubic-bezier(0.3, 0, 1, 1) both; }
+  @keyframes inFwd { from { opacity: 0; transform: translateX(48px); } }
+  @keyframes inOpen { from { opacity: 0; transform: scale(0.88); } }
+  @keyframes outBack { to { opacity: 0; transform: translateX(48px); } }
+  @keyframes outHome { to { opacity: 0; transform: scale(0.9); } }
+
+  /* ---------- MainActivity · res/layout/activity_main.xml ---------- */
+  .scr-app { background: var(--a-bg); }
+  .app-scroll {
+    position: relative;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+  .app-scroll::-webkit-scrollbar { display: none; }
+  .ll { display: flex; flex-direction: column; padding: 28px 20px 32px; }
+  .ll > * { flex: none; }
+
+  .a-title { margin: 0; color: var(--a-text); font: 700 32px/1.15 Roboto, sans-serif; letter-spacing: -0.02em; }
+  .a-muted { margin: 0; color: var(--a-text-muted); font-size: 14px; line-height: 1.2; }
+  .a-muted.is-error { color: var(--a-danger); }
+  .a-section {
+    margin: 0;
+    color: var(--a-text-muted);
+    font: 500 13px/1.2 Roboto, sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .a-label { align-self: flex-start; color: var(--a-text); font: 500 15px/1.25 Roboto, sans-serif; }
+
+  .a-card {
+    overflow: hidden;
+    border: 1px solid var(--a-border);
+    border-radius: 16px;
+    background: var(--a-surface);
+  }
+  .a-divider { height: 1px; margin-left: 16px; background: var(--a-border); }
+  .a-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 64px;
+    padding: 12px 16px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .a-row-main { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+  .a-status { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .a-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--a-danger); }
+  .a-dot.is-ok { background: var(--a-ok); }
+  .a-chev { flex: none; width: 20px; height: 20px; fill: var(--a-text-muted); }
+
+  .a-inline { display: flex; align-items: center; gap: 8px; }
+  .a-inline .a-field { flex: 1; min-width: 0; }
+  .a-field {
+    min-height: 52px;
+    padding: 0 16px;
+    border: 1px solid var(--a-field-border);
+    border-radius: 12px;
+    background: var(--a-surface);
+    color: var(--a-text);
+    font: 400 16px/1.2 Roboto, sans-serif;
+    caret-color: var(--a-text);
+    outline: none;
+  }
+  .a-field::placeholder { color: var(--a-text-muted); }
+  .a-field:focus { border-color: var(--a-text); box-shadow: inset 0 0 0 1px var(--a-text); }
+  .a-field.flash { animation: flash 1.2s ease-out; }
+  @keyframes flash { 0%, 40% { background: var(--a-surface-muted); } }
+
+  .a-btn {
+    position: relative;
+    overflow: hidden;
+    flex: none;
+    min-height: 52px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--a-text);
+    font: 500 15px/1.2 Roboto, sans-serif;
+    cursor: pointer;
+  }
+  .a-btn-primary { background: var(--a-primary); color: var(--a-on-primary); }
+  .a-btn-primary:disabled { background: var(--a-text-muted); }
+  .a-btn-secondary { border: 1px solid var(--a-field-border); background: var(--a-surface); }
+  .a-btn-secondary:disabled, .a-btn-text:disabled { color: var(--a-text-muted); cursor: default; }
+  .a-btn-text { min-height: 48px; padding: 0 12px; border-radius: 24px; }
+  .a-btn-text.danger { color: var(--a-danger); }
+  .a-btn:focus-visible, .a-row:focus-visible, .a-switch:focus-visible { outline: 2px solid var(--a-text); outline-offset: -2px; }
+
+  .rp { position: relative; overflow: hidden; }
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--a-ripple);
+    transform: scale(0);
+    animation: ripple 0.5s ease-out forwards;
+    pointer-events: none;
+  }
+  .a-btn-primary .ripple { background: var(--a-ripple-on-primary); }
+  @keyframes ripple { to { transform: scale(1); opacity: 0; } }
+
+  .a-pairbox {
+    display: flex;
+    flex-direction: column;
+    margin-top: 12px;
+    padding: 16px 16px 8px;
+    border-radius: 12px;
+    background: var(--a-surface-muted);
+  }
+  .a-code { margin-top: 2px; color: var(--a-text); font: 700 34px/1.2 "Roboto Mono", monospace; letter-spacing: 0.2em; }
+
+  .a-switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    min-height: 56px;
+    padding: 12px 16px;
+    border: 0;
+    background: transparent;
+    color: var(--a-text);
+    font: 400 15px/1.3 Roboto, sans-serif;
+    text-align: left;
+    cursor: pointer;
+  }
+  .a-switch .track {
+    position: relative;
+    flex: none;
+    width: 34px;
+    height: 14px;
+    margin: 0 3px;
+    border-radius: 7px;
+    background: var(--a-track-off);
+    transition: background-color 0.15s;
+  }
+  .a-switch .thumb {
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--a-thumb-off);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    transition: transform 0.15s, background-color 0.15s;
+  }
+  .a-switch[aria-checked="true"] .track { background: color-mix(in srgb, var(--a-primary) 45%, transparent); }
+  .a-switch[aria-checked="true"] .thumb { transform: translateX(20px); background: var(--a-primary); }
+
+  .a-loghead { display: flex; align-items: center; }
+  .a-log {
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--a-surface-muted);
+    color: var(--a-text);
+    font: 400 12px/1.4 "Roboto Mono", "Droid Sans Mono", monospace;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* ---------- Layar Setelan sistem ---------- */
+  .scr-set { background: var(--s-bg); color: var(--s-text); }
+  .set-top { flex: none; display: flex; align-items: center; height: 64px; padding: 0 4px; }
+  .icon-btn {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    fill: currentColor;
+    cursor: pointer;
+  }
+  .icon-btn:active { background: var(--s-item-press); }
+  .set-body { flex: 1; overflow-y: auto; padding: 0 16px 16px; scrollbar-width: none; }
+  .set-title { margin: 4px 8px 24px; font: 400 32px/40px Roboto, sans-serif; }
+  .set-group { display: grid; gap: 2px; overflow: hidden; border-radius: 24px; }
+  .set-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    min-height: 72px;
+    padding: 12px 16px;
+    border: 0;
+    background: var(--s-item);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .set-item:active { background: var(--s-item-press); }
+  .set-item.is-static { cursor: default; }
+  .set-item.is-static:active { background: var(--s-item); }
+  .set-text { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+  .set-text .t { font-size: 16px; line-height: 24px; }
+  .set-text .s { color: var(--s-muted); font-size: 14px; line-height: 20px; }
+  .set-note { margin: 16px 8px 0; color: var(--s-muted); font-size: 14px; line-height: 20px; }
+  .set-hero { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 8px 0 28px; }
+  .set-hero-name { font-size: 24px; line-height: 32px; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 16px 4px;
+    padding: 6px 12px 6px 16px;
+    border: 1px solid var(--s-outline);
+    border-radius: 8px;
+    color: var(--s-muted);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .app-ic {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: #FFF;
+    font-size: 17px;
+    font-weight: 700;
+  }
+  svg.app-ic { border-radius: 0; }
+  svg.app-ic.lg { width: 64px; height: 64px; }
+  .m3sw {
+    position: relative;
+    flex: none;
+    width: 52px;
+    height: 32px;
+    border-radius: 16px;
+    background: var(--s-track-off);
+    box-shadow: inset 0 0 0 2px var(--s-outline);
+    transition: background-color 0.2s, box-shadow 0.2s;
+  }
+  .m3sw::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--s-outline);
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .m3sw.on { background: var(--s-accent); box-shadow: none; }
+  .m3sw.on::after { top: 4px; left: 24px; width: 24px; height: 24px; background: var(--s-on-accent); }
+
+  /* ---------- Layar utama ---------- */
+  .scr-home {
+    align-items: center;
+    color: #FFF;
+    background:
+      radial-gradient(90% 60% at 15% 20%, rgba(200, 34, 42, 0.45), transparent 70%),
+      radial-gradient(80% 60% at 90% 85%, rgba(31, 122, 74, 0.35), transparent 70%),
+      linear-gradient(170deg, #2A2F3A, #14161B);
+  }
+  .home-clock { margin-top: 72px; font: 300 76px/1 Roboto, sans-serif; letter-spacing: -0.02em; }
+  .home-date { margin-top: 10px; font-size: 15px; opacity: 0.85; }
+  .home-dock { display: flex; gap: 26px; margin: auto 0 28px; }
+  .home-app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 64px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #FFF;
+    font: 400 12px/1.2 Roboto, sans-serif;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+  }
+  .home-app.is-static { cursor: default; }
+  .home-app .ic {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 22px;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+  .home-app svg.ic { border-radius: 0; box-shadow: none; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35)); }
+  .home-app:active .ic { transform: scale(0.94); }
+
+  /* ---------- Lapisan sistem: notifikasi, toast, dialog ---------- */
+  .hun {
+    position: absolute;
+    z-index: 44;
+    top: 36px;
+    left: 8px;
+    right: 8px;
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 0 12px;
+    padding: 14px 16px;
+    border-radius: 24px;
+    background: var(--o-surface);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.12);
+    transform: translateY(-150%);
+    transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1);
+    cursor: pointer;
+  }
+  .hun.show { transform: none; }
+  .hun .app-ic { grid-row: span 3; width: 36px; height: 36px; font-size: 15px; }
+  .hun-meta { color: var(--o-muted); font-size: 12px; line-height: 16px; }
+  .hun-title { color: var(--o-text); font-size: 15px; font-weight: 500; line-height: 20px; }
+  .hun-text { color: var(--o-muted); font-size: 14px; line-height: 20px; }
+
+  .toast-wrap {
+    position: absolute;
+    z-index: 45;
+    left: 0;
+    right: 0;
+    bottom: 112px;
+    display: flex;
+    justify-content: center;
+    padding: 0 28px;
+    pointer-events: none;
+  }
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    padding: 10px 16px 10px 10px;
+    border-radius: 22px;
+    background: var(--o-surface);
+    color: var(--o-text);
+    font-size: 14px;
+    line-height: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .toast.show { opacity: 1; transform: none; }
+  .toast svg { flex: none; width: 24px; height: 24px; }
+
+  .scrim {
+    position: absolute;
+    z-index: 40;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--scrim);
+  }
+  .scrim.show { display: flex; animation: fadeIn 0.15s; }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .dialog {
+    width: 100%;
+    max-width: 312px;
+    padding: 24px;
+    border-radius: 28px;
+    background: var(--s-dialog);
+    color: var(--s-text);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    animation: dialogIn 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+  @keyframes dialogIn { from { opacity: 0; transform: scale(0.92); } }
+  .dialog h3 { margin: 0 0 16px; font: 400 24px/32px Roboto, sans-serif; }
+  .dialog p { margin: 0; color: var(--s-muted); font-size: 14px; line-height: 20px; }
+  .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+  .tbtn {
+    height: 40px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--s-accent);
+    font: 500 14px Roboto, sans-serif;
+    cursor: pointer;
+  }
+  .tbtn:active, .tbtn:focus-visible { background: color-mix(in srgb, var(--s-accent) 14%, transparent); outline: none; }
+  .radios { display: grid; gap: 4px; margin: 0 -8px; }
+  .radio { display: flex; gap: 12px; align-items: flex-start; padding: 8px; border-radius: 12px; cursor: pointer; }
+  .radio input { flex: none; width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--s-accent); }
+  .radio b { display: block; color: var(--s-text); font-size: 16px; font-weight: 400; line-height: 24px; }
+  .radio small { display: block; color: var(--s-muted); font-size: 14px; line-height: 20px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- res/drawable/ic_launcher.xml -->
+    <symbol id="ic-app" viewBox="0 0 48 48">
+      <path fill="#C8222A" d="M10,2h28a8,8 0,0 1,8 8v28a8,8 0,0 1,-8 8h-28a8,8 0,0 1,-8 -8v-28a8,8 0,0 1,8 -8z"/>
+      <path fill="#F5F6F3" d="M14,10h20v26l-2.5,-2 -2.5,2 -2.5,-2 -2.5,2 -2.5,-2 -2.5,2 -2.5,-2 -2.5,2z"/>
+      <path fill="#23262B" d="M18,15h12v2h-12zM18,20h8v2h-8zM18,25h12v4h-12z"/>
+    </symbol>
+    <symbol id="ic-back" viewBox="0 0 24 24">
+      <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+    </symbol>
+    <!-- res/drawable/ic_chevron.xml -->
+    <symbol id="ic-chev" viewBox="0 0 24 24">
+      <path d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
+    </symbol>
+    <symbol id="ic-gear" viewBox="0 0 24 24">
+      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="page">
+  <div class="device-col">
+    <div class="device-slot">
+      <div class="device">
+        <div class="screen" id="screen" data-chrome="app" data-theme="light">
+
+          <div class="statusbar" aria-hidden="true">
+            <span id="sbTime">10:21</span>
+            <span class="icons">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 21 0 8.5C3.3 5.4 7.4 3.5 12 3.5s8.7 1.9 12 5z"/></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24"><path d="M2 22h20V2z"/></svg>
+              <svg width="9" height="16" viewBox="0 0 12 22"><path d="M4 0h4v2h3a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3z"/></svg>
+            </span>
+          </div>
+          <div class="cam" aria-hidden="true"></div>
+
+          <!-- MainActivity · res/layout/activity_main.xml -->
+          <section class="scr scr-app is-on" id="scrApp" data-chrome="app" aria-label="Aplikasi QRIS Alert">
+            <div class="app-scroll" id="appScroll">
+              <div class="ll">
+                <h1 class="a-title">QRIS Alert</h1>
+                <p class="a-muted" style="margin-top:4px">Teruskan pembayaran QRIS dari HP ke widget OBS.</p>
+
+                <h2 class="a-section" style="margin-top:32px">Izin HP</h2>
+                <div class="a-card" style="margin-top:10px">
+                  <button type="button" class="a-row rp" id="rowAccess">
+                    <span class="a-row-main">
+                      <span class="a-label">Akses notifikasi</span>
+                      <span class="a-status"><span class="a-dot" id="accessDot"></span><span class="a-muted" id="accessStatus"></span></span>
+                    </span>
+                    <svg class="a-chev" aria-hidden="true"><use href="#ic-chev"/></svg>
+                  </button>
+                  <div class="a-divider"></div>
+                  <button type="button" class="a-row rp" id="rowBattery">
+                    <span class="a-row-main">
+                      <span class="a-label">Optimasi baterai</span>
+                      <span class="a-muted" style="margin-top:2px">Matikan untuk QRIS Alert dan aplikasi merchant.</span>
+                    </span>
+                    <svg class="a-chev" aria-hidden="true"><use href="#ic-chev"/></svg>
+                  </button>
+                </div>
+
+                <h2 class="a-section" style="margin-top:32px">Server</h2>
+                <label class="a-label" for="server" style="margin-top:12px">Alamat server</label>
+                <div class="a-inline" style="margin-top:8px">
+                  <input class="a-field" id="server" type="text" inputmode="url" placeholder="http://192.168.1.10:3000" autocomplete="off" autocapitalize="off" spellcheck="false">
+                  <button type="button" class="a-btn a-btn-secondary rp" id="btnFind">Cari</button>
+                </div>
+                <p class="a-muted" id="serverHint" style="margin-top:6px" aria-live="polite">Ketuk Cari untuk menemukan server di Wi-Fi yang sama.</p>
+
+                <label class="a-label" for="token" style="margin-top:20px">App token</label>
+                <div class="a-inline" style="margin-top:8px">
+                  <input class="a-field" id="token" type="text" placeholder="Ambil, atau tempel dari server" autocomplete="off" autocapitalize="off" spellcheck="false">
+                  <button type="button" class="a-btn a-btn-secondary rp" id="btnPair">Ambil</button>
+                </div>
+                <p class="a-muted" id="tokenHint" style="margin-top:6px" aria-live="polite">Ketuk Ambil, lalu klik Izinkan di dashboard PC.</p>
+                <div class="a-pairbox" id="pairBox" hidden>
+                  <span class="a-muted">Kode di dashboard PC</span>
+                  <span class="a-code" id="pairCode"></span>
+                  <span class="a-muted" style="margin-top:6px">Buka dashboard QRIS Alert di PC, pastikan kodenya sama, lalu klik Izinkan. Dashboard belum terbuka? Klik dua kali Mulai QRIS Alert.</span>
+                  <button type="button" class="a-btn a-btn-text rp" id="btnPairCancel" style="align-self:flex-start;margin:4px 0 0 -12px">Batal</button>
+                </div>
+
+                <h2 class="a-section" style="margin-top:32px">Filter notifikasi</h2>
+                <label class="a-label" for="packages" style="margin-top:12px">Aplikasi yang dipantau</label>
+                <input class="a-field" id="packages" type="text" placeholder="id.dana" style="margin-top:8px" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <p class="a-muted" style="margin-top:6px">Nama paket aplikasi, pisahkan dengan koma. Pakai mode deteksi untuk mencari tahu.</p>
+
+                <label class="a-label" for="keywords" style="margin-top:20px">Kata kunci pembayaran</label>
+                <input class="a-field" id="keywords" type="text" placeholder="diterima, menerima" style="margin-top:8px" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <p class="a-muted" style="margin-top:6px">Cukup salah satu kata ada di notifikasi. Ini mencegah notifikasi promo ikut terbaca.</p>
+
+                <div class="a-card" style="margin-top:24px">
+                  <button type="button" class="a-switch rp" id="speak" role="switch" aria-checked="true">
+                    <span>Bacakan nominal di HP ini</span><span class="track"><span class="thumb"></span></span>
+                  </button>
+                  <div class="a-divider"></div>
+                  <button type="button" class="a-switch rp" id="detect" role="switch" aria-checked="false">
+                    <span>Mode deteksi: catat semua notifikasi</span><span class="track"><span class="thumb"></span></span>
+                  </button>
+                </div>
+
+                <button type="button" class="a-btn a-btn-primary rp" id="btnSave" style="margin-top:24px">Simpan pengaturan</button>
+                <button type="button" class="a-btn a-btn-secondary rp" id="btnTest" style="margin-top:12px">Kirim pembayaran tes</button>
+
+                <div class="a-loghead" style="margin-top:28px">
+                  <h2 class="a-section" style="flex:1">Catatan</h2>
+                  <button type="button" class="a-btn a-btn-text rp" id="btnRefresh">Muat ulang</button>
+                  <button type="button" class="a-btn a-btn-text danger rp" id="btnClear" style="margin-right:-12px">Hapus</button>
+                </div>
+                <div class="a-log" id="log" style="margin-top:4px"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS -->
+          <section class="scr scr-set" id="scrNotif" data-chrome="settings" aria-label="Setelan: akses notifikasi">
+            <div class="set-top">
+              <button type="button" class="icon-btn" data-back aria-label="Kembali"><svg width="24" height="24"><use href="#ic-back"/></svg></button>
+            </div>
+            <div class="set-body">
+              <h2 class="set-title">Akses notifikasi</h2>
+              <div class="set-group">
+                <button type="button" class="set-item" id="openQrisNotif">
+                  <svg class="app-ic"><use href="#ic-app"/></svg>
+                  <span class="set-text"><span class="t">QRIS Alert</span><span class="s" id="qrisNotifSummary">Tidak diizinkan</span></span>
+                </button>
+                <div class="set-item is-static">
+                  <span class="app-ic" style="background:#4285F4">A</span>
+                  <span class="set-text"><span class="t">Android Auto</span><span class="s">Tidak diizinkan</span></span>
+                </div>
+                <div class="set-item is-static">
+                  <span class="app-ic" style="background:#5F6368">G</span>
+                  <span class="set-text"><span class="t">Google</span><span class="s">Diizinkan</span></span>
+                </div>
+              </div>
+              <p class="set-note">Aplikasi dengan akses ini dapat membaca semua notifikasi, termasuk informasi pribadi seperti nama kontak dan isi pesan.</p>
+            </div>
+          </section>
+
+          <section class="scr scr-set" id="scrNotifApp" data-chrome="settings" aria-label="Setelan: akses notifikasi QRIS Alert">
+            <div class="set-top">
+              <button type="button" class="icon-btn" data-back aria-label="Kembali"><svg width="24" height="24"><use href="#ic-back"/></svg></button>
+            </div>
+            <div class="set-body">
+              <div class="set-hero">
+                <svg class="app-ic lg"><use href="#ic-app"/></svg>
+                <div class="set-hero-name">QRIS Alert</div>
+              </div>
+              <div class="set-group">
+                <button type="button" class="set-item" id="listenerRow" role="switch" aria-checked="false">
+                  <span class="set-text"><span class="t">Izinkan akses notifikasi</span></span>
+                  <span class="m3sw" id="listenerSwitch"></span>
+                </button>
+              </div>
+              <p class="set-note">QRIS Alert dapat membaca semua notifikasi, termasuk informasi pribadi seperti nama kontak, foto, dan isi pesan yang Anda terima.</p>
+            </div>
+          </section>
+
+          <!-- Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS -->
+          <section class="scr scr-set" id="scrBattery" data-chrome="settings" aria-label="Setelan: pengoptimalan baterai">
+            <div class="set-top">
+              <button type="button" class="icon-btn" data-back aria-label="Kembali"><svg width="24" height="24"><use href="#ic-back"/></svg></button>
+            </div>
+            <div class="set-body">
+              <h2 class="set-title">Pengoptimalan baterai</h2>
+              <div class="chip">Semua aplikasi <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></div>
+              <div class="set-group" id="batteryList"></div>
+              <p class="set-note">Aplikasi yang dioptimalkan bisa dihentikan sistem saat berjalan di latar belakang.</p>
+            </div>
+          </section>
+
+          <section class="scr scr-home" id="scrHome" data-chrome="home" aria-label="Layar utama">
+            <div class="home-clock" id="homeClock"></div>
+            <div class="home-date" id="homeDate"></div>
+            <div class="home-dock">
+              <button type="button" class="home-app" id="launchApp"><svg class="ic"><use href="#ic-app"/></svg><span>QRIS Alert</span></button>
+              <div class="home-app is-static"><span class="ic" style="background:#118EEA">D</span><span>DANA</span></div>
+              <div class="home-app is-static"><span class="ic" style="background:#E3E6EC;color:#3D5BA9"><svg width="28" height="28" fill="currentColor"><use href="#ic-gear"/></svg></span><span>Setelan</span></div>
+            </div>
+          </section>
+
+          <div class="hun" id="hun" role="status" aria-live="polite">
+            <span class="app-ic" id="hunIcon"></span>
+            <span class="hun-meta"><span id="hunApp"></span> · sekarang</span>
+            <span class="hun-title" id="hunTitle"></span>
+            <span class="hun-text" id="hunText"></span>
+          </div>
+
+          <div class="toast-wrap">
+            <div class="toast" id="toast" role="status" aria-live="polite">
+              <svg><use href="#ic-app"/></svg><span id="toastText"></span>
+            </div>
+          </div>
+
+          <div class="scrim" id="scrim">
+            <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+              <h3 id="dlgTitle"></h3>
+              <div id="dlgBody"></div>
+              <div class="dlg-actions" id="dlgActions"></div>
+            </div>
+          </div>
+
+          <nav class="navbar" aria-label="Navigasi sistem">
+            <button type="button" id="navBack" aria-label="Kembali"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M17 4v16L5 12z"/></svg></button>
+            <button type="button" id="navHome" aria-label="Layar utama"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></button>
+            <button type="button" id="navRecents" aria-label="Aplikasi terbaru"><svg width="22" height="22" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <p class="device-cap">Tombol ◁ ○ □ di bawah layar bisa dipakai.</p>
+  </div>
+
+  <main class="panel">
+    <header class="intro">
+      <p class="kicker">Pratinjau aplikasi Android</p>
+      <h1>QRIS Alert<br>di HP</h1>
+      <p class="lede">Layar dan perilaku aplikasi dari folder <code>android/</code>. Semua berjalan di browser ini, tidak ada data yang dikirim ke mana pun.</p>
+      <ol class="steps">
+        <li><span>Ketuk <b>Akses notifikasi</b>, aktifkan QRIS Alert, lalu tekan ◁.</span></li>
+        <li><span>Alamat server terisi sendiri. Ketuk <b>Ambil</b>, lalu klik <b>Izinkan</b> di kartu Dashboard PC.</span></li>
+        <li><span>Kirim notifikasi DANA, lalu ketuk <b>Muat ulang</b> di bagian Catatan.</span></li>
+      </ol>
+    </header>
+
+    <section class="card" aria-labelledby="hDash">
+      <div class="card-head">
+        <h2 id="hDash">Dashboard PC</h2>
+        <p>Persetujuan token, seperti di <code>localhost:3000</code></p>
+      </div>
+      <ul class="requests" id="requests"><li class="empty">Belum ada HP yang minta token. Ketuk Ambil di aplikasi.</li></ul>
+      <h3>Jendela server</h3>
+      <div class="kv">
+        <div><span>Alamat untuk HP</span><code>http://192.168.1.10:3000</code></div>
+        <div><span>App token</span><code id="simToken"></code></div>
+      </div>
+      <h3>Diterima server</h3>
+      <ul class="ledger" id="ledger"><li class="empty">Belum ada pembayaran masuk.</li></ul>
+    </section>
+
+    <section class="card" aria-labelledby="hNotif">
+      <div class="card-head">
+        <h2 id="hNotif">Notifikasi masuk ke HP</h2>
+      </div>
+      <div class="amount">
+        <label for="simAmount">Nominal</label>
+        <input id="simAmount" type="text" inputmode="numeric" value="25.000">
+      </div>
+      <div class="notifs">
+        <button type="button" class="notif-btn" data-notif="dana">
+          <span class="dot" style="background:#118EEA">D</span>
+          <span><b>DANA · pembayaran</b><small>Berisi kata "diterima"</small></span>
+        </button>
+        <button type="button" class="notif-btn" data-notif="promo">
+          <span class="dot" style="background:#118EEA">D</span>
+          <span><b>DANA · promo</b><small>Cashback Rp10.000, tanpa kata kunci</small></span>
+        </button>
+        <button type="button" class="notif-btn" data-notif="gopay">
+          <span class="dot" style="background:#00AA13">G</span>
+          <span><b>GoPay Merchant · pembayaran</b><small>Paketnya belum ada di daftar pantauan</small></span>
+        </button>
+        <button type="button" class="notif-btn" data-notif="wa">
+          <span class="dot" style="background:#25D366">W</span>
+          <span><b>WhatsApp · pesan</b><small>Teks mirip pembayaran dari aplikasi lain</small></span>
+        </button>
+      </div>
+      <p class="hint">Nominal dibacakan browser kalau <b>Bacakan nominal</b> aktif. Nama paket GoPay Merchant di sini hanya contoh.</p>
+      <p class="note" id="simNote" hidden></p>
+      <p class="note" id="pending" hidden>Ada catatan baru yang belum tampil. Ketuk <b>Muat ulang</b> di aplikasi, sama seperti aplikasi aslinya.</p>
+    </section>
+
+    <section class="card" aria-labelledby="hCond">
+      <div class="card-head">
+        <h2 id="hCond">Kondisi</h2>
+      </div>
+      <div class="toggles">
+        <label class="check">
+          <input type="checkbox" id="simServer" checked>
+          <span><b>Server menyala</b><small>Matikan untuk melihat Cari gagal, percobaan ulang, dan pesan gagal kirim.</small></span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="simWifi" checked>
+          <span><b>HP satu Wi-Fi dengan PC</b><small>Kalau beda jaringan, Cari tidak menemukan server.</small></span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="simRestricted">
+          <span><b>Setelan terbatas aktif</b><small>Android 13 ke atas untuk aplikasi dari APK. Di HP asli: Info aplikasi → menu titik tiga → Izinkan setelan terbatas.</small></span>
+        </label>
+      </div>
+      <div class="row-between">
+        <div class="seg" role="radiogroup" aria-label="Tema HP">
+          <label><input type="radio" name="theme" value="light" checked><span>Terang</span></label>
+          <label><input type="radio" name="theme" value="dark"><span>Gelap</span></label>
+        </div>
+        <button type="button" class="btn" id="simReset">Mulai ulang pratinjau</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const screenEl = $('screen');
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const pad = (n) => String(n).padStart(2, '0');
+  const hms = (d = new Date()) => `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+  /* ================= Server palsu di PC · server/server.js ================= */
+
+  const SERVER_HOST = '192.168.1.10:3000';
+  const SERVER_NAME = 'PC-STREAM';
+  const SERVER_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join('');
+  const PAIR_TTL = 120000;
+  const sim = { serverOn: true, sameWifi: true, restricted: false };
+  const pairings = new Map(); // id -> { id, code, device, createdAt, status }
+  $('simToken').textContent = SERVER_TOKEN;
+
+  class LinkError extends Error {} // ServerLink.LinkException
+  class NetError extends Error {}  // java.io.IOException
+
+  function activePairings() {
+    const now = Date.now();
+    for (const [id, p] of pairings) if (now - p.createdAt > PAIR_TTL) pairings.delete(id);
+    return [...pairings.values()];
+  }
+
+  // true bila server bisa dihubungi dari HP, atau pesan galat seperti HttpURLConnection
+  function reachable(base) {
+    let url;
+    try { url = new URL(base); } catch { return 'no protocol: ' + base; }
+    const host = url.hostname;
+    const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+    if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(host) && host !== 'localhost') {
+      return `Unable to resolve host "${host}": No address associated with hostname`;
+    }
+    const online = sim.serverOn && sim.sameWifi;
+    if (online && url.protocol === 'http:' && `${host}:${port}` === SERVER_HOST) return true;
+    return `failed to connect to /${host} (port ${port}) after 5000ms`;
+  }
+
+  const api = {
+    async pair(base, device) {
+      await wait(250 + Math.random() * 200);
+      const reach = reachable(base);
+      if (reach !== true) throw new NetError(reach);
+      if (activePairings().filter((p) => p.status === 'pending').length >= 5) return { code: 429 };
+      const pairing = {
+        id: Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => b.toString(16).padStart(2, '0')).join(''),
+        code: String(Math.floor(Math.random() * 10000)).padStart(4, '0'),
+        device,
+        createdAt: Date.now(),
+        status: 'pending',
+      };
+      pairings.set(pairing.id, pairing);
+      renderRequests();
+      return { code: 200, body: { id: pairing.id, code: pairing.code, expiresIn: PAIR_TTL / 1000 } };
+    },
+    async pairStatus(base, id) {
+      await wait(120);
+      const reach = reachable(base);
+      if (reach !== true) throw new NetError(reach);
+      activePairings();
+      const pairing = pairings.get(id);
+      if (!pairing) return { code: 404 };
+      if (pairing.status === 'pending') return { code: 200, body: { status: 'pending' } };
+      pairings.delete(id);
+      renderRequests();
+      return pairing.status === 'approved'
+        ? { code: 200, body: { status: 'approved', token: SERVER_TOKEN } }
+        : { code: 200, body: { status: 'denied' } };
+    },
+    async pairCancel(base, id) {
+      if (reachable(base) === true) pairings.delete(id);
+      renderRequests();
+    },
+  };
+
+  function renderRequests() {
+    const list = $('requests');
+    const pending = activePairings().filter((p) => p.status === 'pending');
+    const ids = pending.map((p) => p.id).join();
+    if (list.dataset.ids === ids) return;
+    list.dataset.ids = ids;
+    list.replaceChildren();
+    if (!pending.length) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'Belum ada HP yang minta token. Ketuk Ambil di aplikasi.';
+      list.append(li);
+      return;
+    }
+    for (const p of pending) {
+      const li = document.createElement('li');
+      li.innerHTML =
+        '<span class="req-device"><span></span><small>minta App token</small></span>' +
+        '<span class="req-code"></span>' +
+        '<span class="req-actions"><button type="button" class="btn primary">Izinkan</button><button type="button" class="btn">Tolak</button></span>';
+      li.querySelector('.req-device span').textContent = p.device;
+      li.querySelector('.req-code').textContent = p.code;
+      const [allow, deny] = li.querySelectorAll('button');
+      allow.setAttribute('aria-label', `Izinkan ${p.device}, kode ${p.code.split('').join(' ')}`);
+      deny.setAttribute('aria-label', `Tolak ${p.device}`);
+      allow.addEventListener('click', () => { p.status = 'approved'; renderRequests(); });
+      deny.addEventListener('click', () => { p.status = 'denied'; renderRequests(); });
+      list.append(li);
+    }
+  }
+  setInterval(renderRequests, 1000);
+
+  function ledger(code, payment) {
+    const list = $('ledger');
+    list.querySelector('.empty')?.remove();
+    const li = document.createElement('li');
+    const cells = [
+      [hms(), ''],
+      [String(code), code === 200 ? 'code' : 'code bad'],
+      [rupiah(payment.amount), ''],
+      [code === 200 ? (payment.test ? 'tes' : payment.source) : 'token salah', 'src'],
+    ];
+    for (const [text, cls] of cells) {
+      const span = document.createElement('span');
+      span.textContent = text;
+      if (cls) span.className = cls;
+      li.append(span);
+    }
+    list.prepend(li);
+    while (list.children.length > 8) list.lastElementChild.remove();
+  }
+
+  /* ================= Aplikasi Android ================= */
+
+  /* ---------- Prefs.kt ---------- */
+  const prefs = {
+    _server: '',
+    _token: '',
+    packages: 'id.dana',
+    keywords: 'diterima, menerima',
+    speakLocally: true,
+    detectMode: false,
+    get serverUrl() { return this._server; },
+    set serverUrl(value) {
+      let url = value.trim().replace(/\/+$/, '');
+      if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = 'http://' + url;
+      this._server = url;
+    },
+    get appToken() { return this._token; },
+    set appToken(value) { this._token = value.trim(); },
+  };
+  const split = (text) => text.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+
+  const sys = {
+    listener: false,
+    battery: { 'id.dana': true, 'com.gojek.gopaymerchant': true, 'id.qrisalert': true, 'com.whatsapp': false },
+  };
+  const APPS = {
+    'id.dana': { name: 'DANA', color: '#118EEA', letter: 'D' },
+    'com.gojek.gopaymerchant': { name: 'GoPay Merchant', color: '#00AA13', letter: 'G' },
+    'id.qrisalert': { name: 'QRIS Alert' },
+    'com.whatsapp': { name: 'WhatsApp', color: '#25D366', letter: 'W' },
+  };
+  const DEVICE = 'Google Pixel 8';
+
+  /* ---------- EventLog.kt ---------- */
+  let events = [];
+  let shownLog = '';
+  function stamp(d = new Date()) {
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${hms(d)}`;
+  }
+  function logAdd(message) {
+    events = [`${stamp()}  ${message.replace(/\n/g, ' ')}`, ...events].slice(0, 150);
+    updatePending();
+  }
+  const logRead = () => events.join('\n');
+  function updatePending() { $('pending').hidden = logRead() === shownLog; }
+
+  /* ---------- PaymentParser.kt ---------- */
+  const amountPattern = /(?:Rp|IDR)\.?\s?(\d[\d.,]*)/i;
+  function parseAmount(text) {
+    const match = amountPattern.exec(text);
+    if (!match) return null;
+    const cleaned = match[1].replace(/[.,]+$/, '').replace(/[.,]\d{2}$/, '');
+    const amount = Number(cleaned.replace(/\D/g, ''));
+    return amount > 0 ? amount : null;
+  }
+  function sourceName(pkg) {
+    if (pkg === 'id.dana') return 'DANA';
+    if (pkg.includes('gopay') || pkg.includes('gojek')) return 'GoPay';
+    return pkg.slice(pkg.lastIndexOf('.') + 1);
+  }
+  const idr = new Intl.NumberFormat('id-ID');
+  const rupiah = (amount) => 'Rp' + idr.format(amount);
+
+  /* ---------- ServerLink.kt ---------- */
+  const ServerLink = {
+    async discover() {
+      if (sim.serverOn && sim.sameWifi) {
+        await wait(400 + Math.random() * 400);
+        return { url: 'http://' + SERVER_HOST, name: SERVER_NAME };
+      }
+      await wait(2500);
+      return null;
+    },
+    async requestPair(base, device) {
+      try { new URL(base + '/api/pair'); } catch { throw new LinkError('Alamat server tidak valid.'); }
+      const res = await api.pair(base, device);
+      if (res.code === 429) throw new LinkError('Terlalu banyak permintaan. Tunggu sebentar, lalu coba lagi.');
+      if (res.code !== 200) throw new LinkError(`Server membalas HTTP ${res.code}.`);
+      return { id: res.body.id, code: res.body.code, expiresInSec: res.body.expiresIn };
+    },
+    async checkPair(base, id) {
+      let res;
+      try { res = await api.pairStatus(base, id); } catch { return { status: 'pending' }; }
+      if (res.code === 404) return { status: 'expired' };
+      return res.body;
+    },
+    cancelPair(base, id) { api.pairCancel(base, id); },
+  };
+
+  /* ---------- Sender.kt: satu antrean, 3 percobaan ---------- */
+  let sendQueue = Promise.resolve();
+  function send(payment, onDone) {
+    const base = prefs.serverUrl;
+    const token = prefs.appToken;
+    if (!base || !token) {
+      const message = 'Alamat server atau App token belum diisi';
+      logAdd(message);
+      onDone?.(false, message);
+      return;
+    }
+    sendQueue = sendQueue.then(() => deliver(base, token, payment, onDone));
+  }
+  async function deliver(base, token, payment, onDone) {
+    let error = '';
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await wait(300 + Math.random() * 300);
+      const reach = reachable(base);
+      if (reach === true) {
+        if (token !== SERVER_TOKEN) {
+          ledger(401, payment);
+          error = 'App token salah (HTTP 401)';
+          break;
+        }
+        ledger(200, payment);
+        logAdd('Terkirim ke widget: ' + rupiah(payment.amount));
+        onDone?.(true, 'OK');
+        return;
+      }
+      error = reach;
+      if (attempt < 3) await wait(2000 * attempt);
+    }
+    logAdd(`Gagal kirim ${rupiah(payment.amount)}: ${error}`);
+    onDone?.(false, error);
+  }
+
+  /* ---------- PaymentListenerService.kt ---------- */
+  function onNotificationPosted(n) {
+    const text = [n.title, n.body].filter((s) => s.trim()).join(' | ');
+    if (!text.trim()) return;
+
+    if (prefs.detectMode) logAdd(`[deteksi] ${n.pkg}: ${text.slice(0, 160)}`);
+    if (!split(prefs.packages).includes(n.pkg)) return;
+
+    const lower = text.toLowerCase();
+    const keywords = split(prefs.keywords);
+    if (keywords.length && !keywords.some((k) => lower.includes(k.toLowerCase()))) {
+      if (lower.includes('rp')) logAdd('Diabaikan, kata kunci tidak cocok: ' + text.slice(0, 100));
+      return;
+    }
+
+    const amount = parseAmount(text);
+    if (amount == null) {
+      logAdd('Cocok filter, tapi nominal tidak ditemukan: ' + text.slice(0, 100));
+      return;
+    }
+
+    const source = sourceName(n.pkg);
+    logAdd(`Pembayaran ${rupiah(amount)} via ${source}`);
+    if (prefs.speakLocally) speak(`Pembayaran diterima, ${amount} rupiah`);
+    send({ id: n.id, amount, source, text, time: Date.now(), test: false });
+  }
+  function speak(text) {
+    if (!('speechSynthesis' in window)) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'id-ID';
+    const voice = speechSynthesis.getVoices().find((v) => v.lang.replace('_', '-').toLowerCase().startsWith('id'));
+    if (voice) utterance.voice = voice;
+    speechSynthesis.speak(utterance);
+  }
+
+  /* ---------- MainActivity.kt ---------- */
+  const el = {
+    accessDot: $('accessDot'), accessStatus: $('accessStatus'),
+    server: $('server'), serverHint: $('serverHint'), btnFind: $('btnFind'),
+    token: $('token'), tokenHint: $('tokenHint'), btnPair: $('btnPair'),
+    pairBox: $('pairBox'), pairCode: $('pairCode'),
+    packages: $('packages'), keywords: $('keywords'),
+    speak: $('speak'), detect: $('detect'), log: $('log'), scroll: $('appScroll'),
+  };
+  const setSwitch = (btn, on) => btn.setAttribute('aria-checked', String(on));
+  const isChecked = (btn) => btn.getAttribute('aria-checked') === 'true';
+  let pairRun = 0;
+
+  function onCreate() {
+    el.server.value = prefs.serverUrl;
+    el.token.value = prefs.appToken;
+    el.packages.value = prefs.packages;
+    el.keywords.value = prefs.keywords;
+    setSwitch(el.speak, prefs.speakLocally);
+    setSwitch(el.detect, prefs.detectMode);
+    // Pertama kali dibuka: cari server sendiri supaya alamatnya terisi otomatis
+    if (!prefs.serverUrl) findServer(false);
+  }
+  function save() {
+    prefs.serverUrl = el.server.value;
+    prefs.appToken = el.token.value;
+    prefs.packages = el.packages.value;
+    prefs.keywords = el.keywords.value;
+    el.server.value = prefs.serverUrl;
+  }
+  function setHint(view, text, error = false) {
+    view.textContent = text;
+    view.classList.toggle('is-error', error);
+    view.hidden = false;
+  }
+
+  async function findServer(userAsked) {
+    el.btnFind.disabled = true;
+    setHint(el.serverHint, 'Mencari server di Wi-Fi ini…');
+    const found = await ServerLink.discover();
+    el.btnFind.disabled = false;
+    if (found) {
+      prefs.serverUrl = found.url;
+      el.server.value = prefs.serverUrl;
+      flash(el.server);
+      setHint(el.serverHint, `Server ditemukan${found.name ? ' di ' + found.name : ''}. Lanjut ketuk Ambil.`);
+      if (!prefs.appToken && el.pairBox.hidden) setHint(el.tokenHint, 'Ketuk Ambil, lalu klik Izinkan di dashboard PC.');
+    } else if (userAsked) {
+      setHint(el.serverHint, 'Server tidak ditemukan. Pastikan server menyala dan HP satu Wi-Fi dengan PC, atau isi alamatnya manual.', true);
+    } else {
+      setHint(el.serverHint, 'Ketuk Cari untuk menemukan server di Wi-Fi yang sama.');
+    }
+  }
+
+  async function requestToken() {
+    prefs.serverUrl = el.server.value;
+    el.server.value = prefs.serverUrl;
+    const base = prefs.serverUrl;
+    if (!base) {
+      setHint(el.tokenHint, 'Isi alamat server dulu, atau ketuk Cari.', true);
+      el.server.focus({ preventScroll: true });
+      return;
+    }
+    const run = ++pairRun;
+    el.btnPair.disabled = true;
+    setHint(el.tokenHint, 'Menghubungi server…');
+
+    let ticket;
+    try {
+      ticket = await ServerLink.requestPair(base, DEVICE);
+    } catch (e) {
+      const message = e instanceof LinkError ? e.message
+        : e instanceof NetError ? 'Server tidak bisa dihubungi. Periksa alamatnya dan pastikan HP satu Wi-Fi dengan PC.'
+        : 'Balasan server tidak dikenali. Pastikan alamatnya server QRIS Alert.';
+      if (run === pairRun) pairFailed(message);
+      return;
+    }
+    if (run !== pairRun) return;
+    showPairCode(ticket);
+
+    const deadline = Date.now() + ticket.expiresInSec * 1000;
+    while (pairRun === run && Date.now() < deadline) {
+      await wait(1500);
+      if (pairRun !== run) { ServerLink.cancelPair(base, ticket.id); return; }
+      const result = await ServerLink.checkPair(base, ticket.id);
+      if (result.status === 'pending') continue;
+      if (result.status === 'approved' && result.token) {
+        if (run === pairRun) pairApproved(base, result.token);
+        return;
+      }
+      if (result.status === 'denied') {
+        if (run === pairRun) pairFailed('Permintaan ditolak di dashboard.');
+        return;
+      }
+      break;
+    }
+    if (run === pairRun) pairFailed('Waktu habis sebelum disetujui. Ketuk Ambil untuk mencoba lagi.');
+  }
+  function showPairCode(ticket) {
+    el.tokenHint.hidden = true;
+    el.pairCode.textContent = ticket.code;
+    el.pairCode.setAttribute('aria-label', 'Kode ' + ticket.code.split('').join(' '));
+    el.pairBox.hidden = false;
+  }
+  function pairApproved(base, value) {
+    prefs.serverUrl = base;
+    prefs.appToken = value;
+    el.token.value = prefs.appToken;
+    flash(el.token);
+    endPairing();
+    setHint(el.tokenHint, 'Token tersimpan. HP siap mengirim pembayaran.');
+    logAdd(`Terhubung ke ${base}, App token tersimpan`);
+    refresh();
+    toast('Terhubung ke server');
+  }
+  function pairFailed(message) {
+    endPairing();
+    setHint(el.tokenHint, message, true);
+  }
+  function cancelPairing() {
+    pairRun++;
+    endPairing();
+    setHint(el.tokenHint, 'Dibatalkan. Ketuk Ambil untuk mencoba lagi.');
+  }
+  function endPairing() {
+    el.pairBox.hidden = true;
+    el.btnPair.disabled = false;
+  }
+  function flash(input) {
+    input.classList.remove('flash');
+    void input.offsetWidth;
+    input.classList.add('flash');
+  }
+
+  function refresh() {
+    const enabled = sys.listener;
+    el.accessStatus.textContent = enabled ? 'Aktif' : 'Belum diizinkan. Ketuk untuk mengaktifkan.';
+    el.accessStatus.classList.toggle('is-error', !enabled);
+    el.accessDot.classList.toggle('is-ok', enabled);
+    shownLog = logRead();
+    el.log.textContent = shownLog || 'Belum ada catatan.';
+    updatePending();
+  }
+  function sendTest() {
+    save();
+    const now = Date.now();
+    const payment = { id: 'tes-' + now, amount: 10000, source: 'Aplikasi HP', text: 'Pembayaran tes dari aplikasi', time: now, test: true };
+    toast('Mengirim tes…');
+    send(payment, (ok, message) => {
+      toast(ok ? 'Tes terkirim. Cek widget di OBS.' : 'Gagal: ' + message);
+      refresh();
+    });
+  }
+
+  el.speak.addEventListener('click', () => {
+    const on = !isChecked(el.speak);
+    setSwitch(el.speak, on);
+    prefs.speakLocally = on;
+  });
+  el.detect.addEventListener('click', () => {
+    const on = !isChecked(el.detect);
+    setSwitch(el.detect, on);
+    prefs.detectMode = on;
+    if (on) toast('Mode deteksi aktif. Lakukan pembayaran kecil, lalu lihat catatan.');
+  });
+  $('rowAccess').addEventListener('click', () => startActivity('scrNotif'));
+  $('rowBattery').addEventListener('click', () => startActivity('scrBattery'));
+  el.btnFind.addEventListener('click', () => findServer(true));
+  el.btnPair.addEventListener('click', requestToken);
+  $('btnPairCancel').addEventListener('click', cancelPairing);
+  $('btnSave').addEventListener('click', () => { save(); toast('Pengaturan disimpan'); });
+  $('btnTest').addEventListener('click', sendTest);
+  $('btnRefresh').addEventListener('click', refresh);
+  $('btnClear').addEventListener('click', () => { events = []; refresh(); });
+
+  /* ---------- Toast: antre maksimal 5 per aplikasi, masing-masing LENGTH_LONG ---------- */
+  const toastQueue = [];
+  let toastBusy = false;
+  function toast(message) {
+    if (toastQueue.length + (toastBusy ? 1 : 0) >= 5) return;
+    toastQueue.push(message);
+    if (!toastBusy) nextToast();
+  }
+  function nextToast() {
+    const message = toastQueue.shift();
+    if (message === undefined) { toastBusy = false; return; }
+    toastBusy = true;
+    $('toastText').textContent = message;
+    $('toast').classList.add('show');
+    setTimeout(() => {
+      $('toast').classList.remove('show');
+      setTimeout(nextToast, 250);
+    }, 3500);
+  }
+
+  /* ---------- Navigasi: task aplikasi + layar utama ---------- */
+  let task = ['scrApp'];
+  let onHome = false;
+  let current = 'scrApp';
+  const visible = () => (onHome ? 'scrHome' : task[task.length - 1]);
+  const TRANSIENT = ['is-under', 'is-leaving', 'in-fwd', 'in-open', 'out-back', 'out-home'];
+  let navTimer;
+
+  function go(kind) {
+    const next = visible();
+    if (next === current) return;
+    const from = $(current);
+    const to = $(next);
+    if (document.activeElement && screenEl.contains(document.activeElement)) document.activeElement.blur();
+
+    document.querySelectorAll('.scr').forEach((s) => s.classList.remove(...TRANSIENT));
+    from.classList.remove('is-on');
+    void to.offsetWidth;
+    if (kind === 'back' || kind === 'home') {
+      to.classList.add('is-on');
+      from.classList.add('is-leaving', kind === 'home' ? 'out-home' : 'out-back');
+    } else {
+      from.classList.add('is-under');
+      to.classList.add('is-on', kind === 'open' ? 'in-open' : 'in-fwd');
+    }
+    clearTimeout(navTimer);
+    navTimer = setTimeout(() => document.querySelectorAll('.scr').forEach((s) => s.classList.remove(...TRANSIENT)), 340);
+    screenEl.dataset.chrome = to.dataset.chrome;
+    current = next;
+  }
+  function startActivity(id) {
+    task.push(id);
+    go('fwd');
+  }
+  function back() {
+    if (dialogOpen) return closeDialog();
+    if (onHome) return;
+    // Android 12+: tombol kembali di activity akar memindahkan task ke latar, bukan menutupnya
+    if (task.length === 1) return goHome();
+    task.pop();
+    go('back');
+    if (visible() === 'scrApp') refresh(); // onResume
+  }
+  function goHome() {
+    if (dialogOpen) closeDialog();
+    if (onHome) return;
+    onHome = true;
+    go('home');
+  }
+  function launch() {
+    onHome = false;
+    go('open');
+    if (visible() === 'scrApp') refresh(); // onResume
+  }
+
+  $('navBack').addEventListener('click', back);
+  $('navHome').addEventListener('click', goHome);
+  $('navRecents').addEventListener('click', goHome);
+  $('launchApp').addEventListener('click', launch);
+  document.querySelectorAll('[data-back]').forEach((b) => b.addEventListener('click', back));
+
+  /* ---------- Dialog ---------- */
+  const scrim = $('scrim');
+  let dialogOpen = false;
+  function dialog({ title, body, actions }) {
+    $('dlgTitle').textContent = title;
+    const content = typeof body === 'string' ? Object.assign(document.createElement('p'), { textContent: body }) : body;
+    $('dlgBody').replaceChildren(content);
+    const row = $('dlgActions');
+    row.replaceChildren();
+    for (const action of actions) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tbtn';
+      btn.textContent = action.label;
+      btn.addEventListener('click', () => { closeDialog(); action.run?.(); });
+      row.append(btn);
+    }
+    scrim.classList.add('show');
+    dialogOpen = true;
+    row.lastElementChild.focus({ preventScroll: true });
+  }
+  function closeDialog() {
+    scrim.classList.remove('show');
+    dialogOpen = false;
+  }
+  scrim.addEventListener('click', (e) => { if (e.target === scrim) closeDialog(); });
+
+  /* ---------- Setelan: akses notifikasi ---------- */
+  function renderNotifSettings() {
+    $('qrisNotifSummary').textContent = sys.listener ? 'Diizinkan' : 'Tidak diizinkan';
+    $('listenerSwitch').classList.toggle('on', sys.listener);
+    $('listenerRow').setAttribute('aria-checked', String(sys.listener));
+  }
+  function setListener(on) {
+    sys.listener = on;
+    logAdd(on ? 'Pemantau notifikasi aktif' : 'Pemantau notifikasi terputus, mencoba menyambung ulang');
+    renderNotifSettings();
+  }
+  $('openQrisNotif').addEventListener('click', () => startActivity('scrNotifApp'));
+  $('listenerRow').addEventListener('click', () => {
+    if (sys.listener) return setListener(false);
+    if (sim.restricted) {
+      return dialog({ title: 'Setelan terbatas', body: 'Untuk keamanan Anda, setelan ini saat ini tidak tersedia.', actions: [{ label: 'OK' }] });
+    }
+    dialog({
+      title: 'Izinkan akses notifikasi untuk QRIS Alert?',
+      body: 'QRIS Alert akan dapat membaca semua notifikasi, termasuk informasi pribadi seperti nama kontak, foto, dan teks pesan yang Anda terima. Aplikasi ini juga akan dapat menutup notifikasi atau mengambil tindakan pada tombol di notifikasi.',
+      actions: [{ label: 'Jangan izinkan' }, { label: 'Izinkan', run: () => setListener(true) }],
+    });
+  });
+
+  /* ---------- Setelan: pengoptimalan baterai ---------- */
+  function appIcon(pkg) {
+    const app = APPS[pkg];
+    if (!app.color) return '<svg class="app-ic"><use href="#ic-app"/></svg>';
+    return `<span class="app-ic" style="background:${app.color}">${app.letter}</span>`;
+  }
+  function renderBattery() {
+    const list = $('batteryList');
+    list.replaceChildren();
+    for (const pkg of Object.keys(sys.battery)) {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'set-item';
+      item.innerHTML = appIcon(pkg) + '<span class="set-text"><span class="t"></span><span class="s"></span></span>';
+      item.querySelector('.t').textContent = APPS[pkg].name;
+      item.querySelector('.s').textContent = sys.battery[pkg] ? 'Dioptimalkan' : 'Tidak dioptimalkan';
+      item.addEventListener('click', () => batteryDialog(pkg));
+      list.append(item);
+    }
+  }
+  function batteryDialog(pkg) {
+    let choice = sys.battery[pkg];
+    const body = document.createElement('div');
+    body.className = 'radios';
+    const options = [
+      [false, 'Jangan optimalkan', 'Baterai mungkin lebih cepat habis'],
+      [true, 'Optimalkan', 'Disarankan agar baterai lebih awet'],
+    ];
+    for (const [value, label, desc] of options) {
+      const row = document.createElement('label');
+      row.className = 'radio';
+      row.innerHTML = '<input type="radio" name="bopt"><span><b></b><small></small></span>';
+      const input = row.querySelector('input');
+      input.checked = choice === value;
+      input.addEventListener('change', () => { choice = value; });
+      row.querySelector('b').textContent = label;
+      row.querySelector('small').textContent = desc;
+      body.append(row);
+    }
+    dialog({
+      title: APPS[pkg].name,
+      body,
+      actions: [{ label: 'Batal' }, { label: 'Selesai', run: () => { sys.battery[pkg] = choice; renderBattery(); } }],
+    });
+  }
+
+  /* ---------- Notifikasi heads-up ---------- */
+  const hun = $('hun');
+  let hunTimer;
+  function headsUp(n) {
+    const app = APPS[n.pkg];
+    $('hunIcon').style.background = app.color;
+    $('hunIcon').textContent = app.letter;
+    $('hunApp').textContent = app.name;
+    $('hunTitle').textContent = n.title;
+    $('hunText').textContent = n.body;
+    hun.classList.remove('show');
+    void hun.offsetWidth;
+    hun.classList.add('show');
+    clearTimeout(hunTimer);
+    hunTimer = setTimeout(() => hun.classList.remove('show'), 5000);
+  }
+  hun.addEventListener('click', () => hun.classList.remove('show'));
+
+  /* ================= Panel simulasi ================= */
+
+  const PRESETS = {
+    dana: (a) => ({ pkg: 'id.dana', title: 'DANA Bisnis', body: `Pembayaran QRIS ${rupiah(a)} diterima.` }),
+    promo: () => ({ pkg: 'id.dana', title: 'Cashback buat kamu', body: 'Dapatkan cashback Rp10.000 untuk transaksi QRIS pertamamu hari ini.' }),
+    gopay: (a) => ({ pkg: 'com.gojek.gopaymerchant', title: 'Pembayaran diterima', body: `Kamu menerima ${rupiah(a)} lewat QRIS.` }),
+    wa: () => ({ pkg: 'com.whatsapp', title: 'Rina', body: 'Pembayaran diterima Rp50.000 ya kak, cek dulu' }),
+  };
+  function simAmount() {
+    const amount = Number($('simAmount').value.replace(/\D/g, ''));
+    return amount > 0 ? amount : 25000;
+  }
+  $('simAmount').addEventListener('blur', (e) => { e.target.value = idr.format(simAmount()); });
+
+  let notifSeq = 0;
+  document.querySelectorAll('[data-notif]').forEach((btn) => btn.addEventListener('click', () => {
+    const n = PRESETS[btn.dataset.notif](simAmount());
+    n.id = 'n' + ++notifSeq;
+    headsUp(n);
+    const note = $('simNote');
+    if (!sys.listener) {
+      note.textContent = 'QRIS Alert belum punya akses notifikasi, jadi notifikasi ini tidak terbaca.';
+      note.hidden = false;
+      return;
+    }
+    note.hidden = true;
+    onNotificationPosted(n);
+  }));
+
+  $('simServer').addEventListener('change', (e) => { sim.serverOn = e.target.checked; });
+  $('simWifi').addEventListener('change', (e) => { sim.sameWifi = e.target.checked; });
+  $('simRestricted').addEventListener('change', (e) => { sim.restricted = e.target.checked; });
+  document.querySelectorAll('input[name="theme"]').forEach((r) => r.addEventListener('change', () => {
+    screenEl.dataset.theme = r.value;
+  }));
+  $('simReset').addEventListener('click', () => location.reload());
+
+  /* ---------- Efek riak ---------- */
+  screenEl.addEventListener('pointerdown', (e) => {
+    const host = e.target.closest('.rp');
+    if (!host || host.disabled) return;
+    const rect = host.getBoundingClientRect();
+    const scale = rect.width / host.offsetWidth;
+    const size = Math.hypot(host.offsetWidth, host.offsetHeight) * 2;
+    const x = (e.clientX - rect.left) / scale;
+    const y = (e.clientY - rect.top) / scale;
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${x - size / 2}px;top:${y - size / 2}px`;
+    host.append(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove());
+  });
+
+  /* ---------- Jam & ukuran HP ---------- */
+  const dateFormat = new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+  function clock() {
+    const d = new Date();
+    const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    $('sbTime').textContent = time;
+    $('homeClock').textContent = time;
+    $('homeDate').textContent = dateFormat.format(d);
+  }
+  function fit() {
+    const narrow = matchMedia('(max-width: 900px)').matches;
+    const scale = narrow
+      ? Math.min(1, (innerWidth - 32) / 384)
+      : Math.min(1, (innerHeight - 64 - 34) / 812);
+    document.documentElement.style.setProperty('--s', Math.max(0.5, scale).toFixed(3));
+  }
+
+  clock();
+  setInterval(clock, 10000);
+  fit();
+  addEventListener('resize', fit);
+  onCreate();
+  refresh();
+  renderNotifSettings();
+  renderBattery();
+})();
+</script>
+</body>
+</html>

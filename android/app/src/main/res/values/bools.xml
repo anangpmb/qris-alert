@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ikon status bar dan navigasi gelap di atas latar terang -->
+    <bool name="light_bars">true</bool>
+</resources>

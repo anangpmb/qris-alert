@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="id" data-theme="paper">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QRIS Alert widget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F5F6F3;
+    --ink: #23262B;
+    --ink-soft: #6B7078;
+    --rule: rgba(35, 38, 43, 0.32);
+    --stamp: #D7262E;
+    --slot: #2B2F36;
+    --slot-gap: #0E1012;
+    --led: #3BD16F;
+    --font: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  }
+  html[data-theme="dark"] {
+    --paper: #2B2F36;
+    --ink: #EEF0EA;
+    --ink-soft: #A3A8AF;
+    --rule: rgba(238, 240, 234, 0.28);
+    --stamp: #F0454C;
+    --slot: #15171A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: transparent; overflow: hidden; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 24px 0;
+  }
+
+  /* ---------- Mode struk ---------- */
+
+  .printer {
+    position: relative;
+    z-index: 2;
+    width: 372px;
+    height: 20px;
+    border-radius: 10px;
+    background: var(--slot);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .printer::after {
+    content: "";
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 5px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--slot-gap);
+  }
+  .printer .led {
+    position: absolute;
+    right: 9px;
+    top: 4px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--led);
+    box-shadow: 0 0 6px var(--led);
+  }
+  .stage.active .printer { opacity: 1; }
+
+  .clip {
+    width: 340px;
+    margin-top: -9px;
+    padding: 0 0 30px;
+    overflow: hidden;
+    visibility: hidden;
+  }
+  .stage.active .clip { visibility: visible; }
+
+  .wrap { filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.26)); }
+
+  .receipt {
+    position: relative;
+    background: var(--paper);
+    padding: 24px 24px 32px;
+    transform: translateY(-100%);
+    -webkit-mask: radial-gradient(circle 6px at 50% 100%, transparent 96%, #000 100%) 50% 0 / 14px 100% repeat-x;
+    mask: radial-gradient(circle 6px at 50% 100%, transparent 96%, #000 100%) 50% 0 / 14px 100% repeat-x;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .r-title {
+    font-size: 19px;
+    font-weight: 700;
+    font-stretch: 88%;
+  }
+  .r-time, .r-sub {
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .r-sub { margin-top: 3px; }
+
+  .perf {
+    border: 0;
+    border-top: 2px dashed var(--rule);
+    margin: 14px 0;
+  }
+
+  .amount {
+    white-space: nowrap;
+    overflow: hidden;
+    line-height: 1;
+    padding: 2px 0;
+  }
+  .amount .cur {
+    display: inline-block;
+    font-size: 22px;
+    font-weight: 700;
+    vertical-align: top;
+    margin: 6px 4px 0 0;
+  }
+  .amount .num {
+    font-size: 66px;
+    font-weight: 850;
+    font-stretch: 70%;
+    letter-spacing: -0.01em;
+  }
+
+  .r-thanks {
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+
+  .stamp {
+    position: absolute;
+    right: 16px;
+    top: 146px;
+    color: var(--stamp);
+    border: 3px solid currentColor;
+    border-radius: 9px;
+    padding: 3px;
+    opacity: 0;
+    transform: rotate(-13deg);
+    filter: url(#ink);
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+  html[data-theme="dark"] .stamp { mix-blend-mode: normal; }
+  .stamp span {
+    display: block;
+    border: 1.5px solid currentColor;
+    border-radius: 5px;
+    padding: 2px 12px 1px;
+    font-size: 28px;
+    font-weight: 900;
+    font-stretch: 82%;
+    letter-spacing: 0.08em;
+  }
+
+  /* ---------- Mode total ---------- */
+
+  .tally {
+    width: 340px;
+    filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.26));
+  }
+  .tally-paper {
+    background: var(--paper);
+    padding: 18px 22px 26px;
+    -webkit-mask: radial-gradient(circle 6px at 50% 100%, transparent 96%, #000 100%) 50% 0 / 14px 100% repeat-x;
+    mask: radial-gradient(circle 6px at 50% 100%, transparent 96%, #000 100%) 50% 0 / 14px 100% repeat-x;
+  }
+  .t-label { font-size: 16px; font-weight: 700; font-stretch: 88%; }
+  .t-count { font-size: 14px; color: var(--ink-soft); }
+  .tally .amount { margin-top: 8px; }
+  .tally .amount .num { font-size: 52px; }
+  .t-last {
+    height: 20px;
+    margin-top: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--stamp);
+    opacity: 0;
+  }
+  .t-last.show { animation: last 4.5s ease forwards; }
+  @keyframes last {
+    0% { opacity: 0; transform: translateY(6px); }
+    8%, 80% { opacity: 1; transform: none; }
+    100% { opacity: 0; }
+  }
+
+  body[data-mode="alert"] .tally,
+  body[data-mode="total"] .printer,
+  body[data-mode="total"] .clip { display: none; }
+
+  /* ---------- Status koneksi ---------- */
+
+  .status {
+    position: fixed;
+    left: 12px;
+    bottom: 12px;
+    max-width: calc(100% - 24px);
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(20, 22, 26, 0.88);
+    color: #F1F2EE;
+    font: 500 13px/1.35 var(--font);
+  }
+  [hidden] { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t-last.show { animation-duration: 0.01s; opacity: 1; }
+  }
+</style>
+</head>
+<body data-mode="alert">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="ink">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="noise"/>
+    <feColorMatrix in="noise" type="matrix"
+      values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -1.5 0 0 0 1.42" result="speckle"/>
+    <feComposite in="SourceGraphic" in2="speckle" operator="in"/>
+  </filter>
+</svg>
+
+<div class="stage" id="stage">
+  <div class="printer" aria-hidden="true"><span class="led"></span></div>
+  <div class="clip" id="clip">
+    <div class="wrap">
+      <div class="receipt" id="receipt" role="status" aria-live="polite">
+        <div class="row">
+          <span class="r-title" id="rTitle">Pembayaran masuk</span>
+          <span class="r-time" id="rTime"></span>
+        </div>
+        <div class="row r-sub">
+          <span id="rSource"></span>
+          <span id="rNo"></span>
+        </div>
+        <hr class="perf">
+        <div class="amount" id="rAmountBox"><span class="cur">Rp</span><span class="num" id="rAmount">0</span></div>
+        <hr class="perf">
+        <div class="r-thanks" id="rThanks">Terima kasih!</div>
+        <div class="stamp" id="stamp"><span id="stampText">LUNAS</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tally" id="tally" hidden>
+    <div class="tally-paper">
+      <div class="row">
+        <span class="t-label" id="tLabel">Total hari ini</span>
+        <span class="t-count" id="tCount">0 transaksi</span>
+      </div>
+      <div class="amount" id="tAmountBox"><span class="cur">Rp</span><span class="num" id="tAmount">0</span></div>
+      <div class="t-last" id="tLast" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+
+<div class="status" id="status" hidden></div>
+
+<script>
+(() => {
+  const q = new URLSearchParams(location.search);
+  const hex = (v) => (/^[0-9a-f]{6}$/i.test(v || '') ? '#' + v : null);
+  const opt = {
+    key: q.get('key') || '',
+    mode: q.get('mode') === 'total' ? 'total' : 'alert',
+    duration: Math.min(30, Math.max(4, Number(q.get('duration')) || 7)) * 1000,
+    sound: q.get('sound') !== '0',
+    tts: q.get('tts') === '1',
+    demo: q.get('demo') === '1',
+    title: q.get('title') || 'Pembayaran masuk',
+    thanks: q.has('thanks') ? q.get('thanks') : 'Terima kasih!',
+    theme: q.get('theme') === 'dark' ? 'dark' : 'paper',
+    stamp: hex(q.get('stamp')),
+  };
+
+  document.documentElement.dataset.theme = opt.theme;
+  document.body.dataset.mode = opt.mode;
+  if (opt.stamp) document.documentElement.style.setProperty('--stamp', opt.stamp);
+
+  const $ = (id) => document.getElementById(id);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const fmt = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const clock = (ts) => {
+    const d = new Date(ts);
+    return String(d.getHours()).padStart(2, '0') + '.' + String(d.getMinutes()).padStart(2, '0');
+  };
+
+  // Kecilkan angka bila nominal terlalu panjang untuk lebar struk
+  function fit(box, num, max) {
+    let size = max;
+    num.style.fontSize = size + 'px';
+    while (box.scrollWidth > box.clientWidth && size > 26) {
+      size -= 2;
+      num.style.fontSize = size + 'px';
+    }
+  }
+
+  // ---------- Suara (dibuat langsung dengan Web Audio, tanpa file) ----------
+
+  let ctx = null;
+  function audio() {
+    if (!opt.sound) return null;
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    } catch { return null; }
+  }
+
+  function printerBuzz(ms) {
+    const c = audio();
+    if (!c) return;
+    const len = Math.floor((c.sampleRate * ms) / 1000);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      const gate = Math.floor((i / c.sampleRate) * 20) % 2 === 0 ? 1 : 0.3;
+      data[i] = (Math.random() * 2 - 1) * gate;
+    }
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const band = c.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 2600;
+    band.Q.value = 1.4;
+    const gain = c.createGain();
+    gain.gain.value = 0.07;
+    src.connect(band).connect(gain).connect(c.destination);
+    src.start();
+  }
+
+  function stampSound() {
+    const c = audio();
+    if (!c) return;
+    const t = c.currentTime;
+    // dentum stempel
+    const thud = c.createOscillator();
+    const tg = c.createGain();
+    thud.frequency.setValueAtTime(150, t);
+    thud.frequency.exponentialRampToValueAtTime(60, t + 0.12);
+    tg.gain.setValueAtTime(0.5, t);
+    tg.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    thud.connect(tg).connect(c.destination);
+    thud.start(t);
+    thud.stop(t + 0.18);
+    // "kaching"
+    [[1318.5, 0.1], [1975.5, 0.2]].forEach(([freq, delay]) => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'triangle';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t + delay);
+      g.gain.exponentialRampToValueAtTime(0.3, t + delay + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.6);
+      o.connect(g).connect(c.destination);
+      o.start(t + delay);
+      o.stop(t + delay + 0.65);
+    });
+  }
+
+  function speak(amount) {
+    if (!opt.tts || !('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(`${opt.title}, ${Math.round(amount)} rupiah`);
+    u.lang = 'id-ID';
+    const voice = speechSynthesis.getVoices().find((v) => (v.lang || '').toLowerCase().startsWith('id'));
+    if (voice) u.voice = voice;
+    speechSynthesis.speak(u);
+  }
+  if (opt.tts && 'speechSynthesis' in window) speechSynthesis.getVoices();
+
+  // ---------- Mode struk ----------
+
+  const stage = $('stage');
+  const clip = $('clip');
+  const receipt = $('receipt');
+  const stampEl = $('stamp');
+  const queue = [];
+  let busy = false;
+
+  function enqueue(ev) {
+    queue.push(ev);
+    if (!busy) next();
+  }
+
+  async function next() {
+    const ev = queue.shift();
+    if (!ev) { busy = false; return; }
+    busy = true;
+    try { await showReceipt(ev); } catch (e) { console.error(e); }
+    await wait(450);
+    next();
+  }
+
+  async function showReceipt(ev) {
+    const p = ev.payment;
+    $('rTitle').textContent = opt.title;
+    $('rTime').textContent = clock(p.receivedAt || Date.now());
+    $('rSource').textContent = 'via ' + (p.source || 'QRIS');
+    $('rNo').textContent = p.test ? 'Pembayaran tes' : (ev.count ? 'Transaksi ke-' + ev.count : '');
+    $('rThanks').textContent = opt.thanks;
+    $('rThanks').hidden = !opt.thanks;
+    $('rAmount').textContent = fmt(p.amount);
+    $('stampText').textContent = p.test ? 'TES' : 'LUNAS';
+
+    stage.classList.add('active');
+    fit($('rAmountBox'), $('rAmount'), 66);
+
+    let elapsed;
+    if (reduced) {
+      receipt.style.transform = 'none';
+      stampEl.style.opacity = '1';
+      await clip.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: 'forwards' }).finished;
+      stampSound();
+      speak(p.amount);
+      elapsed = 200;
+    } else {
+      await wait(220);
+      printerBuzz(1100);
+      await receipt.animate(
+        [{ transform: 'translateY(-100%)' }, { transform: 'translateY(0)' }],
+        { duration: 1100, easing: 'steps(22, end)', fill: 'forwards' }
+      ).finished;
+      await wait(140);
+      stampEl.animate(
+        [
+          { opacity: 0, transform: 'rotate(-13deg) scale(1.9)' },
+          { opacity: 1, transform: 'rotate(-13deg) scale(0.94)', offset: 0.75 },
+          { opacity: 1, transform: 'rotate(-13deg) scale(1)' },
+        ],
+        { duration: 230, easing: 'cubic-bezier(.55,0,.8,.2)', fill: 'forwards' }
+      );
+      await wait(170);
+      clip.animate(
+        [{ transform: 'none' }, { transform: 'translateY(3px)' }, { transform: 'none' }],
+        { duration: 160 }
+      );
+      stampSound();
+      speak(p.amount);
+      elapsed = 1630;
+    }
+
+    await wait(Math.max(1500, opt.duration - elapsed - 600));
+
+    // Struk disobek lalu jatuh
+    await clip.animate(
+      reduced
+        ? [{ opacity: 1 }, { opacity: 0 }]
+        : [{ transform: 'none', opacity: 1 }, { transform: 'translateY(56px) rotate(2.5deg)', opacity: 0 }],
+      { duration: reduced ? 250 : 600, easing: 'cubic-bezier(.55,0,1,.45)', fill: 'forwards' }
+    ).finished;
+    stage.classList.remove('active');
+    await wait(260);
+
+    for (const el of [clip, receipt, stampEl]) el.getAnimations().forEach((a) => a.cancel());
+    receipt.style.transform = '';
+    stampEl.style.opacity = '';
+  }
+
+  // ---------- Mode total ----------
+
+  let shownTotal = 0;
+
+  function setTotal(total, count, animate) {
+    $('tCount').textContent = count + ' transaksi';
+    const box = $('tAmountBox');
+    const num = $('tAmount');
+    if (!animate || reduced) {
+      shownTotal = total;
+      num.textContent = fmt(total);
+      fit(box, num, 52);
+      return;
+    }
+    const from = shownTotal;
+    const start = performance.now();
+    shownTotal = total;
+    const step = (now) => {
+      const k = Math.min(1, (now - start) / 900);
+      num.textContent = fmt(from + (total - from) * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(step);
+      else fit(box, num, 52);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function onTotalPayment(ev) {
+    setTotal(ev.total, ev.count, true);
+    const last = $('tLast');
+    const p = ev.payment;
+    last.textContent = (p.test ? 'Tes ' : '+') + 'Rp' + fmt(p.amount) + ' via ' + (p.source || 'QRIS');
+    last.classList.remove('show');
+    void last.offsetWidth;
+    last.classList.add('show');
+    stampSound();
+    speak(p.amount);
+  }
+
+  function handle(ev) {
+    if (opt.mode === 'alert') enqueue(ev);
+    else onTotalPayment(ev);
+  }
+
+  // ---------- Koneksi realtime ----------
+
+  const statusEl = $('status');
+  let statusTimer = null;
+  let source = null;
+
+  function showStatus(msg) {
+    if (!msg) { statusEl.hidden = true; return; }
+    statusEl.textContent = msg;
+    statusEl.hidden = false;
+  }
+
+  function connect() {
+    if (source) source.close();
+    source = new EventSource('/api/stream?key=' + encodeURIComponent(opt.key));
+    clearTimeout(statusTimer);
+    statusTimer = setTimeout(() => showStatus('Menghubungkan ke server…'), 3000);
+
+    source.addEventListener('hello', (e) => {
+      clearTimeout(statusTimer);
+      showStatus('');
+      const d = JSON.parse(e.data);
+      setTotal(d.total, d.count, false);
+      if (opt.mode === 'total') $('tally').hidden = false;
+    });
+    source.addEventListener('payment', (e) => handle(JSON.parse(e.data)));
+    source.onerror = () => {
+      clearTimeout(statusTimer);
+      if (source.readyState === EventSource.CLOSED) {
+        showStatus('Widget belum terhubung. Periksa key di URL dan pastikan server menyala.');
+        setTimeout(connect, 5000);
+      } else {
+        statusTimer = setTimeout(() => showStatus('Koneksi terputus, menyambung ulang…'), 4000);
+      }
+    };
+  }
+
+  function demo() {
+    const amounts = [5000, 10000, 15000, 20000, 25000, 50000, 100000, 1250000];
+    const sources = ['DANA', 'GoPay'];
+    let total = 0;
+    let count = 0;
+    if (opt.mode === 'total') $('tally').hidden = false;
+    const fire = () => {
+      const amount = amounts[Math.floor(Math.random() * amounts.length)];
+      total += amount;
+      count += 1;
+      handle({ payment: { id: 'demo-' + count, amount, source: sources[count % 2], receivedAt: Date.now() }, total, count });
+    };
+    setTimeout(fire, 600);
+    setInterval(fire, Math.max(opt.duration + 2500, 6500));
+  }
+
+  if (opt.demo) demo();
+  else if (!opt.key) showStatus('Tambahkan ?key=… dari dashboard ke URL widget ini.');
+  else connect();
+})();
+</script>
+</body>
+</html>

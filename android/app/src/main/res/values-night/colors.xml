@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#111214</color>
+    <color name="surface">#1A1C1F</color>
+    <color name="surface_muted">#222428</color>
+    <color name="border">#2E3136</color>
+    <color name="field_border">#6B7078</color>
+    <color name="text">#ECEDE8</color>
+    <color name="text_muted">#A0A5AC</color>
+    <color name="primary">#ECEDE8</color>
+    <color name="on_primary">#111214</color>
+    <color name="ok">#5BCB8C</color>
+    <color name="danger">#F0656B</color>
+    <color name="ripple">#29FFFFFF</color>
+    <color name="ripple_on_primary">#22000000</color>
+</resources>

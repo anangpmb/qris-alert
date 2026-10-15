@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QRIS Alert</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --desk: #E6E7E2;
+    --paper: #F5F6F3;
+    --ink: #23262B;
+    --ink-soft: #61666E;
+    --rule: #D1D4CD;
+    --field: #FFFFFF;
+    --stamp: #C8222A;
+    --stamp-ink: #FFFFFF;
+    --ok: #1F7A4A;
+    --check-a: #D9DBD5;
+    --check-b: #ECEDE9;
+    --font: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --desk: #16181C;
+      --paper: #21242A;
+      --ink: #ECEDE8;
+      --ink-soft: #9BA0A7;
+      --rule: #343841;
+      --field: #1A1C21;
+      --stamp: #EE4B52;
+      --stamp-ink: #16181C;
+      --ok: #5BCB8C;
+      --check-a: #24272D;
+      --check-b: #2C3037;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--desk);
+    color: var(--ink);
+    font: 400 16px/1.5 var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 1120px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px 32px;
+    padding-bottom: 24px;
+    border-bottom: 2px dashed var(--rule);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(48px, 8vw, 84px);
+    line-height: 0.9;
+    font-weight: 850;
+    font-stretch: 68%;
+    letter-spacing: -0.01em;
+  }
+  .lede { margin: 10px 0 0; max-width: 46ch; color: var(--ink-soft); }
+  .today-head { text-align: right; }
+  .today-head strong {
+    display: block;
+    font-size: 40px;
+    line-height: 1;
+    font-weight: 800;
+    font-stretch: 72%;
+    font-variant-numeric: tabular-nums;
+  }
+  .today-head span { color: var(--ink-soft); font-size: 15px; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: 24px;
+    margin-top: 28px;
+  }
+  .sheet {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 24px;
+  }
+  h2 {
+    margin: 0 0 18px;
+    font-size: 22px;
+    line-height: 1.2;
+    font-weight: 750;
+    font-stretch: 85%;
+  }
+
+  .field { margin-bottom: 18px; }
+  .field > label, .legend {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .hint { margin: 6px 0 0; font-size: 14px; color: var(--ink-soft); }
+  .hint.error { color: var(--stamp); }
+
+  input[type="text"], input[type="password"], input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--field);
+    color: var(--ink);
+    font: inherit;
+  }
+  input[type="number"] { font-variant-numeric: tabular-nums; }
+  input[type="color"] {
+    width: 48px;
+    height: 40px;
+    padding: 2px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--field);
+  }
+  input:focus-visible, button:focus-visible, .choice input:focus-visible + span {
+    outline: 3px solid var(--stamp);
+    outline-offset: 2px;
+  }
+
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .choices { display: flex; flex-wrap: wrap; gap: 8px; }
+  .choice { position: relative; }
+  .choice input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .choice span {
+    display: inline-block;
+    padding: 8px 14px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--field);
+    cursor: pointer;
+  }
+  .choice input:checked + span {
+    border-color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--ink);
+    font-weight: 600;
+  }
+
+  .check { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; cursor: pointer; }
+  .check input { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--stamp); }
+
+  button {
+    font: inherit;
+    font-weight: 650;
+    padding: 10px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  button.primary { background: var(--stamp); border-color: var(--stamp); color: var(--stamp-ink); }
+  button:active { transform: translateY(1px); }
+
+  .preview {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    height: 500px;
+    padding-top: 10px;
+    border-radius: 4px;
+    background-color: var(--check-b);
+    background-image:
+      linear-gradient(45deg, var(--check-a) 25%, transparent 25%, transparent 75%, var(--check-a) 75%),
+      linear-gradient(45deg, var(--check-a) 25%, transparent 25%, transparent 75%, var(--check-a) 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+    overflow: hidden;
+  }
+  .preview iframe {
+    flex: none;
+    width: 400px;
+    height: 480px;
+    border: 0;
+    background: transparent;
+    color-scheme: normal; /* samakan dengan widget agar latar iframe tetap transparan di mode gelap */
+    transform-origin: top center;
+  }
+  .preview-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .preview-bar .check { margin: 0; }
+
+  .url-row { display: flex; gap: 8px; margin-top: 18px; }
+  .url-row input { flex: 1; min-width: 0; font-size: 14px; }
+
+  .lower { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 24px; margin-top: 24px; }
+  .result { min-height: 24px; margin: 12px 0 0; font-size: 15px; }
+  .result.ok { color: var(--ok); }
+  .result.error { color: var(--stamp); }
+
+  .ledger { list-style: none; margin: 0; padding: 0; }
+  .ledger li {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px dashed var(--rule);
+    font-variant-numeric: tabular-nums;
+  }
+  .ledger li:last-child { border-bottom: 0; }
+  .ledger .t { color: var(--ink-soft); }
+  .ledger .a { font-weight: 700; }
+  .empty { margin: 0; color: var(--ink-soft); }
+
+  .pairing {
+    margin-top: 28px;
+    padding: 20px 24px;
+    border: 2px solid var(--stamp);
+    border-radius: 4px;
+    background: var(--paper);
+  }
+  .pairing h2 { margin-bottom: 4px; }
+  .pairing-list { list-style: none; margin: 12px 0 0; padding: 0; }
+  .pairing-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+    padding: 12px 0;
+    border-top: 1px dashed var(--rule);
+  }
+  .pairing-device { flex: 1 1 200px; font-weight: 600; }
+  .pairing-code {
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 800;
+    font-stretch: 72%;
+    letter-spacing: 0.14em;
+    font-variant-numeric: tabular-nums;
+  }
+  .pairing-code small { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink-soft); }
+  .pairing-actions { display: flex; gap: 8px; }
+
+  @media (max-width: 880px) {
+    .layout, .lower { grid-template-columns: 1fr; }
+    .today-head { text-align: left; }
+  }
+  @media (max-width: 480px) {
+    .page { padding: 24px 16px 48px; }
+    .pair { grid-template-columns: 1fr; }
+    .sheet { padding: 18px; }
+    .url-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <h1>QRIS Alert</h1>
+      <p class="lede">Struk muncul di stream setiap ada pembayaran QRIS masuk ke HP kamu.</p>
+    </div>
+    <div class="today-head" aria-live="polite">
+      <strong id="headTotal">Rp0</strong>
+      <span id="headCount">Masukkan widget key untuk melihat total hari ini</span>
+    </div>
+  </header>
+
+  <section class="pairing" id="pairing" hidden aria-labelledby="h-pairing">
+    <h2 id="h-pairing">HP minta App token</h2>
+    <p class="hint">Izinkan hanya kalau kodenya sama dengan yang tampil di HP kamu.</p>
+    <ul class="pairing-list" id="pairingList" aria-live="polite"></ul>
+  </section>
+
+  <div class="layout">
+    <section class="sheet" aria-labelledby="h-setup">
+      <h2 id="h-setup">Atur widget</h2>
+      <form id="form" onsubmit="return false">
+        <div class="field">
+          <label for="key">Widget key</label>
+          <input type="text" id="key" autocomplete="off" spellcheck="false" placeholder="Salin dari jendela server">
+          <p class="hint" id="keyHint">Tertulis di jendela server, di baris URL widget OBS.</p>
+        </div>
+
+        <div class="field" role="radiogroup" aria-labelledby="l-mode">
+          <span class="legend" id="l-mode">Tampilan</span>
+          <div class="choices">
+            <label class="choice"><input type="radio" name="mode" value="alert" checked><span>Struk tiap pembayaran</span></label>
+            <label class="choice"><input type="radio" name="mode" value="total"><span>Total hari ini</span></label>
+          </div>
+        </div>
+
+        <div class="pair">
+          <div class="field">
+            <label for="title">Judul struk</label>
+            <input type="text" id="title" value="Pembayaran masuk" maxlength="40">
+          </div>
+          <div class="field">
+            <label for="thanks">Kalimat penutup</label>
+            <input type="text" id="thanks" value="Terima kasih!" maxlength="60">
+          </div>
+        </div>
+
+        <div class="pair">
+          <div class="field" id="durationField">
+            <label for="duration">Lama tampil (detik)</label>
+            <input type="number" id="duration" value="7" min="4" max="30">
+          </div>
+          <div class="field">
+            <label for="stamp">Warna stempel</label>
+            <input type="color" id="stamp" value="#d7262e">
+          </div>
+        </div>
+
+        <div class="field" role="radiogroup" aria-labelledby="l-theme">
+          <span class="legend" id="l-theme">Kertas</span>
+          <div class="choices">
+            <label class="choice"><input type="radio" name="theme" value="paper" checked><span>Putih</span></label>
+            <label class="choice"><input type="radio" name="theme" value="dark"><span>Gelap</span></label>
+          </div>
+        </div>
+
+        <label class="check"><input type="checkbox" id="sound" checked><span>Bunyi printer dan kaching</span></label>
+        <label class="check"><input type="checkbox" id="tts"><span>Bacakan nominal dengan suara browser<br><span class="hint">Tidak semua versi OBS mendukung ini. HP tetap bisa membacakan nominal.</span></span></label>
+      </form>
+    </section>
+
+    <section class="sheet" aria-labelledby="h-preview">
+      <div class="preview-bar">
+        <h2 id="h-preview" style="margin:0">Pratinjau</h2>
+        <label class="check"><input type="checkbox" id="demo" checked><span>Putar contoh terus-menerus</span></label>
+      </div>
+      <div class="preview">
+        <iframe id="frame" title="Pratinjau widget" allow="autoplay"></iframe>
+      </div>
+      <div class="url-row">
+        <input type="text" id="url" readonly aria-label="URL widget untuk OBS" placeholder="Isi widget key untuk membuat URL">
+        <button type="button" id="copy">Salin URL</button>
+      </div>
+      <p class="hint" id="obsHint">Di OBS, tambahkan source Browser, tempel URL ini, lalu atur lebar 400 dan tinggi 480.</p>
+    </section>
+  </div>
+
+  <div class="lower">
+    <section class="sheet" aria-labelledby="h-test">
+      <h2 id="h-test">Coba kirim pembayaran tes</h2>
+      <div class="field">
+        <label for="token">App token</label>
+        <input type="password" id="token" autocomplete="off" spellcheck="false" placeholder="Sama dengan yang diisi di aplikasi HP">
+      </div>
+      <div class="field">
+        <label for="amount">Nominal</label>
+        <input type="number" id="amount" value="10000" min="1" step="1000">
+      </div>
+      <button type="button" class="primary" id="send">Kirim tes</button>
+      <p class="result" id="result" role="status"></p>
+    </section>
+
+    <section class="sheet" aria-labelledby="h-ledger">
+      <h2 id="h-ledger">Pembayaran hari ini</h2>
+      <ul class="ledger" id="ledger"></ul>
+      <p class="empty" id="empty">Belum ada pembayaran hari ini. Pembayaran tes tidak dicatat di sini.</p>
+    </section>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const form = $('form');
+  const frame = $('frame');
+  const fmt = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const clock = (ts) => {
+    const d = new Date(ts);
+    return String(d.getHours()).padStart(2, '0') + '.' + String(d.getMinutes()).padStart(2, '0');
+  };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const DEFAULTS = { title: 'Pembayaran masuk', thanks: 'Terima kasih!', duration: 7, stamp: '#d7262e' };
+
+  const initialKey = new URLSearchParams(location.hash.slice(1)).get('key') || '';
+  $('key').value = initialKey;
+  $('demo').checked = !initialKey;
+
+  function params(forPreview) {
+    const p = new URLSearchParams();
+    const key = $('key').value.trim();
+    if (forPreview && $('demo').checked) p.set('demo', '1');
+    else if (key) p.set('key', key);
+    const mode = form.mode.value;
+    if (mode === 'total') p.set('mode', 'total');
+    const dur = Math.min(30, Math.max(4, Number($('duration').value) || DEFAULTS.duration));
+    if (mode === 'alert' && dur !== DEFAULTS.duration) p.set('duration', dur);
+    const title = $('title').value.trim();
+    if (title && title !== DEFAULTS.title) p.set('title', title);
+    const thanks = $('thanks').value.trim();
+    if (thanks !== DEFAULTS.thanks) p.set('thanks', thanks);
+    if (form.theme.value === 'dark') p.set('theme', 'dark');
+    const stamp = $('stamp').value.toLowerCase();
+    if (stamp !== DEFAULTS.stamp) p.set('stamp', stamp.slice(1));
+    if (!$('sound').checked) p.set('sound', '0');
+    if ($('tts').checked) p.set('tts', '1');
+    return p.toString();
+  }
+
+  // Mengembalikan true bila pratinjau dimuat ulang
+  function update() {
+    const key = $('key').value.trim();
+    const mode = form.mode.value;
+    $('url').value = key ? `${location.origin}/widget?${params(false)}` : '';
+    $('durationField').hidden = mode === 'total';
+    const height = mode === 'total' ? 220 : 480;
+    frame.style.height = height + 'px';
+    scalePreview();
+    $('obsHint').textContent =
+      `Di OBS, tambahkan source Browser, tempel URL ini, lalu atur lebar 400 dan tinggi ${height}.`;
+    history.replaceState(null, '', key ? '#key=' + encodeURIComponent(key) : location.pathname);
+
+    const src = '/widget?' + params(true);
+    if (frame.dataset.src === src) return false;
+    frame.dataset.src = src;
+    frame.src = src;
+    return true;
+  }
+
+  // Perkecil pratinjau di layar sempit tanpa mengubah ukuran widget aslinya
+  const preview = frame.parentElement;
+  function scalePreview() {
+    const height = form.mode.value === 'total' ? 220 : 480;
+    const scale = Math.min(1, (preview.clientWidth - 8) / 400);
+    frame.style.transform = scale < 1 ? `scale(${scale.toFixed(3)})` : '';
+    preview.style.height = Math.round(height * scale + 20) + 'px';
+  }
+  new ResizeObserver(scalePreview).observe(preview);
+
+  let debounce = null;
+  form.addEventListener('input', () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => { update(); watchKey(); }, 450);
+  });
+  form.addEventListener('change', () => { update(); watchKey(); });
+  $('demo').addEventListener('change', update);
+
+  $('copy').addEventListener('click', async () => {
+    const input = $('url');
+    if (!input.value) { $('key').focus(); return; }
+    try { await navigator.clipboard.writeText(input.value); }
+    catch { input.select(); document.execCommand('copy'); }
+    $('copy').textContent = 'Tersalin';
+    setTimeout(() => { $('copy').textContent = 'Salin URL'; }, 1600);
+  });
+
+  // ---------- Daftar pembayaran hari ini ----------
+
+  let rows = [];
+  let stream = null;
+  let watchedKey = null;
+
+  function render(total, count) {
+    $('headTotal').textContent = 'Rp' + fmt(total);
+    $('headCount').textContent = `${count} transaksi hari ini`;
+    $('ledger').innerHTML = '';
+    for (const p of rows) {
+      const li = document.createElement('li');
+      li.innerHTML = '<span class="t"></span><span class="s"></span><span class="a"></span>';
+      li.children[0].textContent = clock(p.receivedAt);
+      li.children[1].textContent = p.source;
+      li.children[2].textContent = 'Rp' + fmt(p.amount);
+      $('ledger').appendChild(li);
+    }
+    $('empty').hidden = rows.length > 0;
+  }
+
+  function keyMessage(text, isError) {
+    $('keyHint').textContent = text;
+    $('keyHint').classList.toggle('error', !!isError);
+  }
+
+  async function watchKey() {
+    const key = $('key').value.trim();
+    if (key === watchedKey) return;
+    watchedKey = key;
+    if (stream) { stream.close(); stream = null; }
+    rows = [];
+    if (!key) {
+      render(0, 0);
+      $('headCount').textContent = 'Masukkan widget key untuk melihat total hari ini';
+      keyMessage('Tertulis di jendela server, di baris URL widget OBS.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/summary?key=' + encodeURIComponent(key));
+      if (res.status === 401) {
+        keyMessage('Key ini tidak cocok dengan server. Salin ulang dari jendela server.', true);
+        render(0, 0);
+        $('headCount').textContent = 'Widget key belum benar';
+        return;
+      }
+      const data = await res.json();
+      rows = data.recent.filter((p) => !p.test);
+      render(data.total, data.count);
+      keyMessage('Key cocok. Widget siap dipakai.');
+    } catch {
+      keyMessage('Server tidak bisa dihubungi.', true);
+      return;
+    }
+    stream = new EventSource(`/api/stream?role=dashboard&key=${encodeURIComponent(key)}`);
+    stream.addEventListener('payment', (e) => {
+      const d = JSON.parse(e.data);
+      if (d.payment.test) return;
+      rows = [d.payment, ...rows].slice(0, 15);
+      render(d.total, d.count);
+    });
+  }
+
+  // ---------- Kirim tes ----------
+
+  function say(text, isError) {
+    const el = $('result');
+    el.textContent = text;
+    el.className = 'result ' + (isError ? 'error' : 'ok');
+  }
+
+  $('send').addEventListener('click', async () => {
+    const token = $('token').value.trim();
+    const amount = Math.round(Number($('amount').value));
+    if (!token) { say('Isi App token dari jendela server.', true); $('token').focus(); return; }
+    if (!(amount > 0)) { say('Isi nominal lebih dari 0.', true); $('amount').focus(); return; }
+
+    if ($('demo').checked && $('key').value.trim()) {
+      $('demo').checked = false;
+      if (update()) {
+        await new Promise((r) => frame.addEventListener('load', r, { once: true }));
+        await sleep(900);
+      }
+    }
+
+    $('send').disabled = true;
+    try {
+      const res = await fetch('/api/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ id: 'tes-' + Date.now(), amount, source: 'Dashboard', test: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) say('App token salah. Salin ulang dari jendela server.', true);
+      else if (!res.ok) say('Server menolak tes: ' + (data.error || 'HTTP ' + res.status), true);
+      else if (!$('key').value.trim()) say(`Tes terkirim. Isi widget key agar struknya terlihat di pratinjau.`);
+      else say(`Tes Rp${fmt(amount)} terkirim. Widget terbuka saat ini: ${data.widgets}, termasuk pratinjau.`);
+    } catch {
+      say('Server tidak bisa dihubungi.', true);
+    } finally {
+      $('send').disabled = false;
+    }
+  });
+
+  // ---------- HP minta App token ----------
+
+  const baseTitle = document.title;
+
+  function pairingItem(r) {
+    const li = document.createElement('li');
+    li.dataset.id = r.id;
+    li.innerHTML =
+      '<span class="pairing-device"></span>' +
+      '<span class="pairing-code"><small>Kode</small><span></span></span>' +
+      '<span class="pairing-actions"><button type="button" class="primary">Izinkan</button><button type="button">Tolak</button></span>';
+    li.querySelector('.pairing-device').textContent = r.device;
+    li.querySelector('.pairing-code span').textContent = r.code;
+    const [allow, deny] = li.querySelectorAll('button');
+    allow.setAttribute('aria-label', `Izinkan ${r.device}, kode ${r.code.split('').join(' ')}`);
+    deny.setAttribute('aria-label', `Tolak ${r.device}`);
+    allow.addEventListener('click', () => decide(li, 'approve'));
+    deny.addEventListener('click', () => decide(li, 'deny'));
+    return li;
+  }
+
+  function renderPairing(requests) {
+    const list = $('pairingList');
+    const ids = requests.map((r) => r.id).join();
+    if (list.dataset.ids !== ids) {
+      list.dataset.ids = ids;
+      list.replaceChildren(...requests.map(pairingItem));
+    }
+    $('pairing').hidden = requests.length === 0;
+    document.title = requests.length ? `(${requests.length}) HP minta token · ${baseTitle}` : baseTitle;
+  }
+
+  let pairTimer = null;
+  async function pollPairing() {
+    clearTimeout(pairTimer);
+    try {
+      const res = await fetch('/api/pair/pending', { cache: 'no-store' });
+      // Dashboard dibuka dari komputer lain: persetujuan hanya bisa dari PC yang menjalankan server
+      if (res.status === 403) return;
+      if (res.ok) renderPairing((await res.json()).requests);
+    } catch { /* server sedang mati, coba lagi nanti */ }
+    pairTimer = setTimeout(pollPairing, 2000);
+  }
+
+  async function decide(li, action) {
+    const buttons = li.querySelectorAll('button');
+    buttons.forEach((b) => { b.disabled = true; });
+    try {
+      await fetch(`/api/pair/${li.dataset.id}/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+    } catch {
+      buttons.forEach((b) => { b.disabled = false; });
+    }
+    pollPairing();
+  }
+
+  update();
+  watchKey();
+  pollPairing();
+})();
+</script>
+</body>
+</html>

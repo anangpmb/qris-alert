@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Induk terang. values-night/themes.xml menggantinya dengan induk gelap -->
+    <style name="Base.QrisAlert" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.QrisAlert" parent="Base.QrisAlert">
+        <item name="android:colorPrimary">@color/bg</item>
+        <item name="android:colorPrimaryDark">@color/bg</item>
+        <item name="android:colorAccent">@color/primary</item>
+        <item name="android:colorControlNormal">@color/text_muted</item>
+        <item name="android:colorControlHighlight">@color/ripple</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorSecondary">@color/text_muted</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:windowLightStatusBar">@bool/light_bars</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">@bool/light_bars</item>
+    </style>
+</resources>
